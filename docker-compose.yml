@@ -1,0 +1,18 @@
+version: '2'
+services:
+  db:
+    image: mysql:latest
+    environment:
+      - MYSQL_DATABASE=LorisDB
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - MYSQL_USER=loris
+      - MYSQL_PASSWORD=lorispwdemo
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    # environment:
+    #   - LORIS_DB_CONFIG=/app/test/config.xml
+

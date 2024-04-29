@@ -1,0 +1,92 @@
+FROM ubuntu:jammy
+LABEL org.childmind.image.authors="Gabriel Schubiner <gabriel.schubiner@childmind.org>"
+
+ENV LORIS_VERSION 25.0.2
+ENV PROJECT_NAME="philani"
+ENV TZ="America/New_York"
+
+# Stock images come without apt archive -- needs an update
+RUN apt-get -qqq update
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    apache2 \
+    php8.1 \
+    php-cli \
+    libapache2-mod-php8.1 \
+    php8.1-mysql \
+    php8.1-xml \
+    php8.1-mbstring \
+    php8.1-gd \
+    php8.1-zip \
+    mysql-client \
+    nodejs \
+    npm \
+    curl \
+    git \
+    zip \
+    unzip \
+    make \
+    software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+
+# Configure lorisadmin user
+RUN useradd -U -m -G sudo,www-data -s /bin/bash -u 1001 lorisadmin
+ADD --chown=lorisadmin:lorisadmin https://github.com/aces/Loris/archive/refs/tags/v${LORIS_VERSION}.tar.gz /home/lorisadmin/
+RUN tar -xzf /home/lorisadmin/v${LORIS_VERSION}.tar.gz -C /home/lorisadmin/ \
+    && mv /home/lorisadmin/Loris-${LORIS_VERSION} /var/www/loris
+RUN chmod 755 /var/www/loris && chown -R lorisadmin:lorisadmin /var/www/loris
+WORKDIR /var/www/loris
+
+# Set up logs dir and permissions.
+RUN mkdir -m 770 -p ./tools/logs \
+    && chown lorisadmin:www-data ./tools/logs
+
+# Set up initial project directory skeleton and permissions.
+RUN mkdir -m 770 -p ./project \
+    && chown lorisadmin:www-data ./project
+RUN mkdir -p ./project/${PROJECT_NAME}/{data,libraries,instruments,templates,tables_sql,modules}
+
+# Set up smarty cache directory
+RUN mkdir -m 770 -p ./smarty/templates_c \
+    && chown www-data:www-data ./smarty/templates_c
+
+# Install dependencies
+RUN su lorisadmin -c make
+
+# Configure Apache
+RUN sed -e "s#%LORISROOT%#/var/www/loris#g" \
+        -e "s#%PROJECTNAME%#${PROJECT_NAME}#g" \
+        -e "s#%LOGDIRECTORY%#/var/log/apache2#g" \
+        <./docs/config/apache2-site \
+        >/etc/apache2/sites-available/"${PROJECT_NAME}".conf \
+    && ln -s /etc/apache2/sites-available/"${PROJECT_NAME}".conf \
+                  /etc/apache2/sites-enabled/"${PROJECT_NAME}".conf \
+    && a2dissite 000-default \
+    && a2ensite "${PROJECT_NAME}".conf \
+    && a2enmod rewrite \
+    && a2enmod headers \
+    && echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# Configure PHP
+RUN sed -i -e "s/^session.gc_maxlifetime =.*\$/session.gc_maxlifetime = 10800/" \
+           -e "s/^max_execution_time =.*\$/max_execution_time = 10800/" \
+           -e "s/^upload_max_filesize =.*\$/upload_max_filesize = 1024M/" \
+           -e "s/^post_max_size =.*\$/post_max_size = 10800/" \
+        /etc/php/8.1/apache2/php.ini 
+
+# Set up database.
+
+#ENV LORIS_SQL_DB=LorisDB
+#ENV LORIS_SQL_HOST=mysql
+#ENV LORIS_SQL_USER=loris
+#ENV LORIS_SQL_PASSWORD=
+#ENV LORIS_BASEURL=
+
+EXPOSE 80
+VOLUME ["/var/www/loris/project", "/var/log/apache2"]
+#
+#ADD docs/Docker/LorisWeb-EntryPoint.sh /entrypoint.sh
+CMD ["apache2ctl", "-D", "FOREGROUND"]
+#ENTRYPOINT ["/entrypoint.sh"]
