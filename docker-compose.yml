@@ -1,18 +1,52 @@
 version: '2'
 services:
   db:
-    image: mysql:latest
+    build:
+      context: .
+      dockerfile: mysql.Dockerfile
+      args:
+        LORIS_VERSION: ${LORIS_VERSION}
     environment:
-      - MYSQL_DATABASE=LorisDB
-      - MYSQL_RANDOM_ROOT_PASSWORD=yes
-      - MYSQL_USER=loris
-      - MYSQL_PASSWORD=lorispwdemo
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
+    secrets:
+      - mysql_password
+      - mysql_root_password
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
   web:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: loris.Dockerfile
+      args:
+        LORIS_VERSION: ${LORIS_VERSION}
     ports:
       - "8080:80"
-    # environment:
-    #   - LORIS_DB_CONFIG=/app/test/config.xml
+    environment:
+      # - LORIS_DB_CONFIG=/app/test/config.xml
+      - LORIS_ADMIN_USER=${LORIS_ADMIN_USER}
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
+      - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
+      - LORIS_ADMIN_PASSWORD_FILE=/run/secrets/loris_admin_password
+    depends_on:
+      db:
+        condition: service_healthy
+    secrets:
+      - mysql_password
+      - mysql_root_password
+      - loris_admin_password
 
+secrets:
+  mysql_password:
+    file: ./secrets/mysql_password.txt
+  mysql_root_password:
+    file: ./secrets/mysql_root_password.txt
+  loris_admin_password:
+    file: ./secrets/loris_admin_password.txt
