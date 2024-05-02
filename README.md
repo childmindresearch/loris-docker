@@ -2,7 +2,7 @@
 
 Docker build for Loris
 
-Currently only does basic install without DB setup or MRI module.
+Currently only does basic install without MRI module.
 
 ### Next Steps
 
