@@ -17,11 +17,12 @@ if [ ! -f /var/www/loris/projects/config.xml ]; then
     MYSQL_PASSWORD=$(<${MYSQL_PASSWORD_FILE})
     LORIS_ADMIN_PASSWORD=$(<${LORIS_ADMIN_PASSWORD_FILE})
     LORIS_ADMIN_PASSWORD_HASH=$(echo -n $LORIS_ADMIN_PASSWORD | php -r 'echo password_hash(file_get_contents("php://stdin"), PASSWORD_DEFAULT);')
-    echo $LORIS_ADMIN_PASSWORD_HASH
 
+    # Update the Loris admin user password in database.
     mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
           -e "UPDATE users SET UserID='${LORIS_ADMIN_USER}', Password_hash='${LORIS_ADMIN_PASSWORD_HASH}', Active='Y' WHERE ID=1" ${MYSQL_DATABASE}
 
+    # Update the configuration paths and host.
     BASE_PATH="/var/www/loris/"
     DATA_DIR="/data/$PROJECT_NAME/data/"
     _update_config "base" $BASE_PATH
