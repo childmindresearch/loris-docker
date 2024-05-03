@@ -18,6 +18,13 @@ services:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 5s
       retries: 10
+  couchdb:
+    image: couchdb:3
+    volumes:
+      - ./couchdb_config.ini:/opt/couchdb/etc/local.ini
+    environment:
+      - COUCHDB_USER=${COUCHDB_USER}
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
   web:
     build:
       context: .
@@ -28,17 +35,22 @@ services:
       - "8080:80"
     environment:
       # - LORIS_DB_CONFIG=/app/test/config.xml
+      - LORIS_HOST=localhost
       - LORIS_ADMIN_USER=${LORIS_ADMIN_USER}
+      - LORIS_ADMIN_PASSWORD_FILE=/run/secrets/loris_admin_password
       - MYSQL_HOST=db
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
       - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
-      - LORIS_ADMIN_PASSWORD_FILE=/run/secrets/loris_admin_password
-      - LORIS_HOST=localhost
+      - COUCHDB_HOST=couchdb
+      - COUCHDB_USER=${COUCHDB_USER}
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
+      couchdb:
+        condition: service_started
     secrets:
       - mysql_password
       - mysql_root_password

@@ -47,7 +47,13 @@ if [ ! -f /var/www/loris/projects/config.xml ]; then
         -e "s/%USERNAME%/${MYSQL_USER}/g" \
         -e "s/%PASSWORD%/${MYSQL_PASSWORD}/g" \
         -e "s/%DATABASE%/${MYSQL_DATABASE}/g" \
+        -e "s/%COUCH_HOSTNAME%/${COUCHDB_HOST}/g" \
+        -e "s/%COUCH_PORT%/${COUCHDB_PORT}/g" \
+        -e "s/%COUCH_USERNAME%/${COUCHDB_USER}/g" \
+        -e "s/%COUCH_PASSWORD%/${COUCHDB_PASSWORD}/g" \
+        -e "s/%COUCH_DATABASE%/${COUCHDB_DATABASE}/g" \
         /var/www/loris/project/config.xml
+
 else
     echo "Loris configuration already exists."
 fi
