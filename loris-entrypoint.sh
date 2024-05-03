@@ -27,7 +27,7 @@ if [ ! -f /var/www/loris/projects/config.xml ]; then
     echo "MYSQL_DATABASE: ${MYSQL_DATABASE}"
 
     # Update the Loris admin user password in database.
-    _update_admin_pass $LORIS_ADMIN_USER $LORIS_ADMIN_PASSWORD_HASH
+    _update_admin_pass $LORIS_ADMIN_USER $LORIS_ADMIN_PASSWORD
 
     # Update the configuration paths and host.
     _update_config "base" $BASE_PATH
