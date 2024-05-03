@@ -2,21 +2,39 @@ FROM ubuntu:jammy
 LABEL org.childmind.image.authors="Gabriel Schubiner <gabriel.schubiner@childmind.org>"
 
 ARG LORIS_VERSION 25.0.2
+ARG LORIS_MRI_VERSION 24.1.16
 ENV PROJECT_NAME="philani"
 ENV TZ="America/New_York"
 
-# Stock images come without apt archive -- needs an update
+# Add R repository.
+RUN add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
+
+# Stock images come without apt archive -- needs an update.
 RUN apt-get -qqq update
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
     apache2 \
+    apt-utils \
+    bc \
     curl \
+    cython3 \
+    dirmngr \
+    ed \ 
     git \
+    gnupg2 \
+    imagemagick \
     libapache2-mod-php8.1 \
+    libc6 \
+    libcurl4-openssl-dev \
+    libjpeg8 \
     libmysqlclient-dev \
+    libssl-dev \
+    libstdc++6 \
+    libxml2-dev \
     make \
     mysql-client \
     nodejs \
     npm \
+    perl \
     php8.1 \
     php-cli \
     php8.1-mysql \
@@ -25,13 +43,32 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
     php8.1-gd \
     php8.1-zip \
     python3 \
+    python3-cffi \
     python3-dev \
+    python3-matplotlib \
+    python3-numpy \
+    python3-pil \
     python3-pip \
+    python3-scipy \
+    r-base \
+    r-base-dev \
     software-properties-common \
+    tzdata \
     unzip \
     virtualenv \
+    wget \
     zip \
     && rm -rf /var/lib/apt/lists/*
+
+# Install R packages
+RUN Rscript -e 'update.packages(repos="https://cloud.r-project.org",ask=F)' && \
+    Rscript -e 'install.packages(c("lme4","tidyverse","batchtools","Rcpp","rjson","jsonlite","tidyr","shiny","visNetwork","DT"),repos="https://cloud.r-project.org")' && \
+    Rscript -e 'install.packages(c("gridBase","data.tree"),repos="https://cloud.r-project.org")' && \
+    Rscript -e 'install.packages(c("glmnet","doMC"),repos="https://cloud.r-project.org")'
+
+# Update R packages and install missing
+RUN Rscript -e 'update.packages(repos="https://cloud.r-project.org",ask=F)' && \
+    Rscript -e 'install.packages(c("bigstatsr"),repos="https://cloud.r-project.org")'
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
@@ -98,12 +135,43 @@ RUN su lorisadmin -c make
 #ENV LORIS_BASEURL=
 
 ##### Loris-MRI #####
-# sudo mkdir -p /data/$projectname
-# sudo mkdir -p /opt/$projectname/bin/mri
-# sudo chown -R lorisadmin:lorisadmin /data/$projectname
-# sudo chown -R lorisadmin:lorisadmin /opt/$projectname
-# Download the latest release from the releases page and extract it to /opt/$projectname/bin/mri
-# https://github.com/aces/Loris-MRI/releases
+RUN mkdir -p /data/${PROJECT_NAME} /opt/${PROJECT_NAME}/bin/mri \
+    && chown -R lorisadmin:lorisadmin /data/${PROJECT_NAME} /opt/${PROJECT_NAME}
+
+ADD --chown=lorisadmin:lorisadmin \
+    https://github.com/aces/Loris-MRI/archive/refs/tags/v${LORIS_MRI_VERSION}.tar.gz /home/lorisadmin/
+RUN tar -xzf /home/lorisadmin/v${LORIS_MRI_VERSION}.tar.gz -C /opt/${PROJECT_NAME}/bin/mri
+
+# install minc-toolkit 1.9.18
+RUN wget http://packages.bic.mni.mcgill.ca/minc-toolkit/Debian/minc-toolkit-1.9.18-20200813-Ubuntu_18.04-x86_64.deb && \
+    dpkg -i minc-toolkit-1.9.18-20200813-Ubuntu_18.04-x86_64.deb && \
+    rm -f minc-toolkit-1.9.18-20200813-Ubuntu_18.04-x86_64.deb && \
+    apt-get autoclean && \
+    rm -rf /var/lib/apt/lists/*
+
+# install RMINC
+RUN . /opt/minc/1.9.18/minc-toolkit-config.sh && \
+    wget https://github.com/vfonov/RMINC/archive/v1.5.2.3tidy.tar.gz && \
+    R CMD INSTALL v1.5.2.3tidy.tar.gz --configure-args='--with-build-path=/opt/minc/1.9.18' && \
+    rm -f v1.5.2.3tidy.tar.gz && \
+    rm -f v1.5.2.3tidy.tar.gz
+
+# install patched version of scoop
+RUN . /opt/minc/1.9.18/minc-toolkit-config.sh && \
+    wget https://github.com/vfonov/scoop/archive/master.tar.gz && \
+    pip3 install master.tar.gz --no-cache-dir && \
+    rm -rf master.tar.gz
+
+# install pyezminc, pyminc, minc2-simple
+RUN . /opt/minc/1.9.18/minc-toolkit-config.sh && \
+    pip3 install pyminc --no-cache-dir && \
+    wget https://github.com/BIC-MNI/pyezminc/archive/release-1.2.01.tar.gz && \
+    pip3 install release-1.2.01.tar.gz --no-cache-dir && \
+    wget https://github.com/NIST-MNI/minc2-simple/archive/v2.2.30.tar.gz && \
+    tar zxf v2.2.30.tar.gz && \
+    python3 minc2-simple-2.2.30/python/setup.py install && \
+    rm -rf v2.2.30.tar.gz release-1.2.01.tar.gz minc2-simple-0 
+
 # Install MINC toolkit from http://bic-mni.github.io/
 # sudo dpkg -i minc-toolkit<version>.deb
 # https://github.com/aces/Loris-MRI/blob/main/README.md
