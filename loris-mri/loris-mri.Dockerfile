@@ -146,6 +146,12 @@ RUN mkdir /usr/local/bin/tpcclib && \
     chmod 777 /usr/local/bin/tpcclib && \
     cp -r /home/lorisadmin/tpcclib/bin/* /usr/local/bin/tpcclib
 
+# Install entrypoint script.
+COPY --chown=lorisadmin:www-data --chmod=770 install-loris-mri.sh /etc/entrypoint.d/install-loris-mri.sh
+# Override base image entrypoint.
+COPY --chown=lorisadmin:www-data --chmod=770 loris-mri-entrypoint.sh /entrypoint.sh
+
+
 ###WHAT THIS SCRIPT WILL NOT DO###
 #1)It doesn't set up the SGE
 #2)It doesn't fetch the CIVET stuff   TODO:Get the CIVET stuff from somewhere and place it in somewhere

@@ -83,8 +83,13 @@ RUN sed -i -e "s/^session.gc_maxlifetime =.*\$/session.gc_maxlifetime = 10800/" 
 # Install dependencies
 RUN su lorisadmin -c make
 
+# Install entrypoint scripts.
+RUN mkdir -p /etc/entrypoint.d
+COPY --chown=lorisadmin:www-data --chmod=770 install-loris.sh /etc/entrypoint.d/install-loris.sh
+COPY --chown=lorisadmin:www-data --chmod=770 loris-entrypoint.sh /entrypoint.sh
+
+# Set image ports and volumes.
 EXPOSE 80
 VOLUME ["/var/www/loris/project", "/var/log/apache2"]
-COPY --chown=lorisadmin:www-data --chmod=770 loris-entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["apache2ctl", "-D", "FOREGROUND"]

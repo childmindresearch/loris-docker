@@ -3,7 +3,7 @@ services:
   db:
     build:
       context: .
-      dockerfile: mysql.Dockerfile
+      dockerfile: loris-mysql/mysql.Dockerfile
       args:
         LORIS_VERSION: ${LORIS_VERSION}
     environment:
@@ -21,7 +21,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: loris.Dockerfile
+      dockerfile: loris-base/loris.Dockerfile
       args:
         LORIS_VERSION: ${LORIS_VERSION}
     ports:
