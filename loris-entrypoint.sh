@@ -17,7 +17,7 @@ _update_admin_pass () {
     local LORIS_ADMIN_PASSWORD_HASH=$(\
         echo -n $2 | php -r 'echo password_hash(file_get_contents("php://stdin"), PASSWORD_DEFAULT);')
     mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
-          -e "UPDATE users SET UserID='$1}', Password_hash='${LORIS_ADMIN_PASSWORD_HASH}', Active='Y' WHERE ID=1" ${MYSQL_DATABASE}
+          -e "UPDATE users SET UserID='${1}', Password_hash='${LORIS_ADMIN_PASSWORD_HASH}', Active='Y' WHERE ID=1" ${MYSQL_DATABASE}
 }
 
 if [ ! -f /var/www/loris/projects/config.xml ]; then
