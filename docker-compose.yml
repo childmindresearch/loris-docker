@@ -2,8 +2,8 @@ version: '2'
 services:
   db:
     build:
-      context: .
-      dockerfile: loris-mysql/mysql.Dockerfile
+      context: ./loris-mysql
+      dockerfile: mysql.Dockerfile
       args:
         LORIS_VERSION: ${LORIS_VERSION}
     environment:
@@ -20,8 +20,8 @@ services:
       retries: 10
   web:
     build:
-      context: .
-      dockerfile: loris-base/loris.Dockerfile
+      context: ./loris-base
+      dockerfile: loris.Dockerfile
       args:
         LORIS_VERSION: ${LORIS_VERSION}
     ports:
