@@ -157,5 +157,3 @@ COPY --chown=lorisadmin:www-data --chmod=770 loris-mri-entrypoint.sh /entrypoint
 #2)It doesn't fetch the CIVET stuff   TODO:Get the CIVET stuff from somewhere and place it in somewhere
 #3)It doesn't change the config.xml
 #4)It doesn't populate the Config tables with paths etc.
-
-#### TODO: Move to entrypoint script.

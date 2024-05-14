@@ -21,7 +21,7 @@ _update_admin_pass() {
         echo -n $2 | php -r 'echo password_hash(file_get_contents("php://stdin"), PASSWORD_DEFAULT);'
     )
     mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
-        -e "UPDATE users SET UserID='$1}', Password_hash='${LORIS_ADMIN_PASSWORD_HASH}', Active='Y' WHERE ID=1" ${MYSQL_DATABASE}
+        -e "UPDATE users SET UserID='${1}', Password_hash='${LORIS_ADMIN_PASSWORD_HASH}', Active='Y' WHERE ID=1" ${MYSQL_DATABASE}
 }
 
 install_loris() {
@@ -38,13 +38,13 @@ install_loris() {
         _update_admin_pass $LORIS_ADMIN_USER $LORIS_ADMIN_PASSWORD
 
         # Update the configuration paths and host.
-        _update_config "base" $BASE_PATH
-        _update_config "DownloadPath" $BASE_PATH
+        _update_config "base" "${BASE_PATH}"
+        _update_config "DownloadPath" "${BASE_PATH}"
         _update_config "url" "http://${LORIS_HOST}"
-        _update_config "host" ${LORIS_HOST}
-        _update_config "data" "$DATA_DIR"
-        _update_config "imagePath" "$DATA_DIR"
-        _update_config "MRICodePath" "$DATA_DIR"
+        _update_config "host" "${LORIS_HOST}"
+        _update_config "data" "${DATA_DIR}"
+        _update_config "imagePath" "${DATA_DIR}"
+        _update_config "MRICodePath" "${DATA_DIR}"
         _update_config "JWTKey" $(openssl rand -base64 32)
 
         # Copy base configuration.

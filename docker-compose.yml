@@ -36,6 +36,7 @@ services:
       - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
       - LORIS_ADMIN_PASSWORD_FILE=/run/secrets/loris_admin_password
       - LORIS_HOST=localhost
+      - LORIS_EMAIL=${LORIS_EMAIL}
     depends_on:
       db:
         condition: service_healthy
