@@ -1,7 +1,7 @@
 FROM ubuntu:jammy
 
 ARG MINC_TOOLKIT_VERSION=1.9.18
-ARG PARALLEL=4
+ARG PARALLEL=8
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH=/usr/lib/ccache:$PATH
 ENV CCACHE_DIR=/ccache
@@ -54,7 +54,6 @@ RUN useradd -ms /bin/bash nistmni && \
     echo "nistmni ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/nistmni && \
     chmod 0440 /etc/sudoers.d/nistmni
 
-USER nistmni
 WORKDIR /home/nistmni
 # Package output directory.
 RUN mkdir /home/nistmni/packages
@@ -91,40 +90,40 @@ RUN cmake ../../bic-mni-models -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL
 ### Build MINC-Toolkit ###
 WORKDIR /home/nistmni
 RUN git clone --recursive --branch release-${MINC_TOOLKIT_VERSION} https://github.com/BIC-MNI/minc-toolkit-v2.git minc-toolkit-v2
-RUN mkdir -p build/minc-toolkit-v2
+RUN mkdir -p build/minc-toolkit-v2 /opt/minc
 WORKDIR /home/nistmni/build/minc-toolkit-v2
 RUN cmake ../../minc-toolkit-v2 \
-        -DCMAKE_BUILD_TYPE:STRING=Release   \
+        -DCMAKE_BUILD_TYPE:STRING=Release \
         -DCMAKE_CXX_FLAGS_RELEASE:STRING="-O3 -DNDEBUG -mtune=generic -fcommon" \
         -DCMAKE_C_FLAGS_RELEASE:STRING="-O3 -DNDEBUG -mtune=generic -fcommon" \
         -DCMAKE_Fortran_FLAGS_RELEASE:STRING="-O3 -DNDEBUG -mtune=generic -fcommon" \
         -DCMAKE_INSTALL_PREFIX:PATH=/opt/minc/\${MINC_TOOLKIT_VERSION} \
-        -DMT_BUILD_ABC:BOOL=ON   \
-        -DMT_BUILD_ANTS:BOOL=ON   \
-        -DMT_BUILD_C3D:BOOL=OFF   \
-        -DMT_BUILD_ELASTIX:BOOL=ON   \
-        -DMT_BUILD_IM:BOOL=OFF   \
-        -DMT_BUILD_ITK_TOOLS:BOOL=ON   \
-        -DMT_BUILD_LITE:BOOL=OFF   \
-        -DMT_BUILD_SHARED_LIBS:BOOL=ON   \
-        -DMT_BUILD_VISUAL_TOOLS:BOOL=ON   \
-        -DMT_USE_OPENMP:BOOL=ON   \
+        -DMT_BUILD_ABC:BOOL=ON \
+        -DMT_BUILD_ANTS:BOOL=ON \
+        -DMT_BUILD_C3D:BOOL=OFF \
+        -DMT_BUILD_ELASTIX:BOOL=ON \
+        -DMT_BUILD_IM:BOOL=OFF \
+        -DMT_BUILD_ITK_TOOLS:BOOL=ON \
+        -DMT_BUILD_LITE:BOOL=OFF \
+        -DMT_BUILD_SHARED_LIBS:BOOL=ON \
+        -DMT_BUILD_VISUAL_TOOLS:BOOL=ON \
+        -DMT_USE_OPENMP:BOOL=ON \
         -DMT_BUILD_OPENBLAS:BOOL=ON \
         -DMT_BUILD_SHARED_LIBS:BOOL=ON \
         -DBUILD_TESTING:BOOL=ON \
         -DMT_BUILD_LITE:BOOL=OFF \
         -DUSE_SYSTEM_GLUT:BOOL=OFF \
-        -DUSE_SYSTEM_FFTW3D:BOOL=OFF   \
-        -DUSE_SYSTEM_FFTW3F:BOOL=OFF   \
-        -DUSE_SYSTEM_GLUT:BOOL=OFF   \
-        -DUSE_SYSTEM_GSL:BOOL=OFF   \
-        -DUSE_SYSTEM_HDF5:BOOL=OFF   \
-        -DUSE_SYSTEM_ITK:BOOL=OFF   \
-        -DUSE_SYSTEM_NETCDF:BOOL=OFF   \
-        -DUSE_SYSTEM_NIFTI:BOOL=OFF   \
-        -DUSE_SYSTEM_PCRE:BOOL=OFF   \
-        -DUSE_SYSTEM_ZLIB:BOOL=OFF && \
-    make -j${PARALLEL} && \
+        -DUSE_SYSTEM_FFTW3D:BOOL=OFF \
+        -DUSE_SYSTEM_FFTW3F:BOOL=OFF \
+        -DUSE_SYSTEM_GLUT:BOOL=OFF \
+        -DUSE_SYSTEM_GSL:BOOL=OFF \
+        -DUSE_SYSTEM_HDF5:BOOL=OFF \
+        -DUSE_SYSTEM_ITK:BOOL=OFF \
+        -DUSE_SYSTEM_NETCDF:BOOL=OFF \
+        -DUSE_SYSTEM_NIFTI:BOOL=OFF \
+        -DUSE_SYSTEM_PCRE:BOOL=OFF \
+        -DUSE_SYSTEM_ZLIB:BOOL=OFF
+RUN make -j${PARALLEL} && \
     cpack -G DEB && \
     cp *.deb /home/nistmni/build/
 RUN make test > /home/nistmni/build/test_minc-toolkit_v2.txt
