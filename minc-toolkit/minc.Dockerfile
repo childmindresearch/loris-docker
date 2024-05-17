@@ -1,11 +1,8 @@
-FROM ubuntu:jammy
+FROM ubuntu:focal
 
 ARG MINC_TOOLKIT_VERSION=1.9.18
 ARG PARALLEL=8
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PATH=/usr/lib/ccache:$PATH
-ENV CCACHE_DIR=/ccache
-ENV HOME /home/nistmni
 
 # Install build dependencies.
 RUN apt-get -y update && \
@@ -43,55 +40,53 @@ RUN apt-get -y update && \
         wget \
         x11proto-core-dev && \
     wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
-    apt-add-repository 'deb https://apt.kitware.com/ubuntu/ jammy main' -y && \
+    apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main' -y && \
     apt -y update && \
     apt-get install -y --no-install-recommends cmake && \
     apt-get autoclean && \
     rm -rf /var/lib/apt/lists/*
 
-# add user to build all tools
-RUN useradd -ms /bin/bash nistmni && \
-    echo "nistmni ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/nistmni && \
-    chmod 0440 /etc/sudoers.d/nistmni
+ENV PATH=/usr/lib/ccache:$PATH
+ENV CCACHE_DIR=/ccache
 
-WORKDIR /home/nistmni
 # Package output directory.
-RUN mkdir /home/nistmni/packages
+WORKDIR /root
+RUN mkdir /root/packages
 
 ### Build MINC-Toolkit TestSuite ###
 RUN git clone --recursive --branch master https://github.com/BIC-MNI/minc-toolkit-testsuite.git minc-toolkit-testsuite
 RUN mkdir -p build/minc-toolkit-testsuite
-WORKDIR /home/nistmni/build/minc-toolkit-testsuite
+WORKDIR /root/build/minc-toolkit-testsuite
 RUN cmake ../../minc-toolkit-testsuite -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/opt/minc && \
     make -j${PARALLEL} && \
     cpack -G DEB && \
-    cp *.deb /home/nistmni/packages/
+    cp *.deb /root/packages/
 
 ### Build BEaST Library ###
-WORKDIR /home/nistmni
+WORKDIR /root
 RUN git clone --recursive --branch master https://github.com/BIC-MNI/BEaST_library.git BEaST_library
 RUN mkdir -p build/BEaST_library
-WORKDIR /home/nistmni/build/BEaST_library
+WORKDIR /root/build/BEaST_library
 RUN cmake ../../BEaST_library -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/opt/minc && \
     make -j${PARALLEL} && \
     cpack -G DEB && \
-    cp *.deb /home/nistmni/packages/
+    cp *.deb /root/packages/
 
 ### Build BIC MNI Models ###
-WORKDIR /home/nistmni
+WORKDIR /root
 RUN git clone --recursive --branch master https://github.com/BIC-MNI/bic-mni-models.git bic-mni-models
 RUN mkdir -p build/bic-mni-models
-WORKDIR /home/nistmni/build/bic-mni-models
+WORKDIR /root/build/bic-mni-models
 RUN cmake ../../bic-mni-models -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/opt/minc && \
     make -j${PARALLEL} && \
     cpack -G DEB && \
     cp *.deb ~/build/
 
 ### Build MINC-Toolkit ###
-WORKDIR /home/nistmni
+WORKDIR /root
 RUN git clone --recursive --branch release-${MINC_TOOLKIT_VERSION} https://github.com/BIC-MNI/minc-toolkit-v2.git minc-toolkit-v2
 RUN mkdir -p build/minc-toolkit-v2 /opt/minc
-WORKDIR /home/nistmni/build/minc-toolkit-v2
+WORKDIR /root/build/minc-toolkit-v2
 RUN cmake ../../minc-toolkit-v2 \
         -DCMAKE_BUILD_TYPE:STRING=Release \
         -DCMAKE_CXX_FLAGS_RELEASE:STRING="-O3 -DNDEBUG -mtune=generic -fcommon" \
@@ -123,7 +118,7 @@ RUN cmake ../../minc-toolkit-v2 \
         -DUSE_SYSTEM_NIFTI:BOOL=OFF \
         -DUSE_SYSTEM_PCRE:BOOL=OFF \
         -DUSE_SYSTEM_ZLIB:BOOL=OFF
-RUN make -j${PARALLEL} && \
-    cpack -G DEB && \
-    cp *.deb /home/nistmni/build/
-RUN make test > /home/nistmni/build/test_minc-toolkit_v2.txt
+RUN make -j${PARALLEL}
+RUN cpack -G DEB && \
+    cp *.deb /root/build/
+RUN make test > /root/build/test_minc-toolkit_v2.txt
