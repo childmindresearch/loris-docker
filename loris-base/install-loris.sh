@@ -40,7 +40,7 @@ install_loris() {
         # Update the configuration paths and host.
         _update_config "base" "${BASE_PATH}"
         _update_config "DownloadPath" "${BASE_PATH}"
-        _update_config "url" "http://${LORIS_HOST}"
+        _update_config "url" "http://${LORIS_HOST}:${LORIS_PORT}"
         _update_config "host" "${LORIS_HOST}"
         _update_config "data" "${DATA_DIR}"
         _update_config "imagePath" "${DATA_DIR}"
@@ -51,11 +51,14 @@ install_loris() {
         cp /var/www/loris/docs/config/config.xml /var/www/loris/project/config.xml
 
         # Replace placeholders with environment variables.
-        sed -i -e "s/%HOSTNAME%/${MYSQL_HOST}/g" \
+        sed -i \
+            -e "s/%HOSTNAME%/${MYSQL_HOST}/g" \
             -e "s/%USERNAME%/${MYSQL_USER}/g" \
             -e "s/%PASSWORD%/${MYSQL_PASSWORD}/g" \
             -e "s/%DATABASE%/${MYSQL_DATABASE}/g" \
             /var/www/loris/project/config.xml
+        chown lorisadmin:www-data /var/www/loris/project/config.xml
+        chmod 660 /var/www/loris/project/config.xml
     else
         echo "Loris configuration already exists."
     fi

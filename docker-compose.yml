@@ -5,6 +5,7 @@ services:
       context: ./loris-mysql
       dockerfile: mysql.Dockerfile
       args:
+        LORIS_SOURCE: ${LORIS_SOURCE}
         LORIS_VERSION: ${LORIS_VERSION}
     environment:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
@@ -23,6 +24,7 @@ services:
       context: ./loris-base
       dockerfile: loris.Dockerfile
       args:
+        LORIS_SOURCE: ${LORIS_SOURCE}
         LORIS_VERSION: ${LORIS_VERSION}
     ports:
       - "8080:80"
@@ -36,6 +38,7 @@ services:
       - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
       - LORIS_ADMIN_PASSWORD_FILE=/run/secrets/loris_admin_password
       - LORIS_HOST=localhost
+      - LORIS_PORT=8080
       - LORIS_EMAIL=${LORIS_EMAIL}
     depends_on:
       db:
