@@ -11,6 +11,18 @@ LABEL org.childmind.image.authors="Gabriel Schubiner <gabriel.schubiner@childmin
 ENV PROJECT_NAME="loris"
 ENV TZ="America/New_York"
 
+# Declare default environment variables for installation.
+ENV SITE_NAME=Montreal
+ENV SITE_ALIAS=MTL
+ENV MRI_ALIAS=MTL
+ENV STUDY_SITE_YN=Y
+ENV VISIT_LABEL=V1
+ENV WINDOW_MIN_DAYS=0
+ENV WINDOW_MAX_DAYS=100
+ENV OPTIMUM_MIN_DAYS=40
+ENV OPTIMUM_MAX_DAYS=60
+ENV WINDOW_MIDPOINT_DAYS=50 
+
 # Use Bash as the default shell.
 SHELL ["/bin/bash", "-c"]
 
@@ -54,7 +66,6 @@ RUN tar -xzf /home/lorisadmin/${LORIS_VERSION_TAG}.tar.gz -C /home/lorisadmin/ \
 
 # Install from loris git repository
 FROM base AS loris-git
-# ADD --chown=lorisadmin:lorisadmin https://github.com/aces/Loris.git#${LORIS_VERSION_TAG} /var/www/loris
 ADD --chown=lorisadmin:lorisadmin https://github.com/aces/Loris.git /var/www/loris
 
 # Continue installation with appropriate source

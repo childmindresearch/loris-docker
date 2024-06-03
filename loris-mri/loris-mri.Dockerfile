@@ -7,11 +7,12 @@ ARG MINC_TOOLKIT_RELEASE_VERSION=1.9.18-20220625-Ubuntu_20.04
 ARG MINC_TOOLKIT_TESTSUITE_VERSION=0.1.3-20131212
 ARG BEAST_LIBRARY_VERSION=1.1.0-20121212
 ARG BIC_MNI_MODELS_VERSION=0.1.1-20120421
-ARG MRI_BIN_DIR=/opt/${PROJECT_NAME}/bin/mri
-ARG PROD_FILENAME=prod
+ENV MRI_BIN_DIR=/opt/${PROJECT_NAME}/bin/mri
+ENV PROD_FILENAME=prod
 
 # Update and install dependencies.
 RUN DEBIAN_FRONTEND=noninteractive \
+    # add-apt-repository universe && \
     apt-get -qqq update && \
     apt-get -y install \
         cpanminus \
@@ -19,7 +20,8 @@ RUN DEBIAN_FRONTEND=noninteractive \
         gdebi-core \
         imagemagick \
         libc6 \
-        libgl1-mesa-glx \
+        libglx-mesa0 \
+        # libgl1-mesa-glx \
         libglu1-mesa \
         libstdc++6 \
         octave \

@@ -1,4 +1,3 @@
-version: '2'
 services:
   db:
     build:
@@ -7,6 +6,7 @@ services:
       args:
         LORIS_SOURCE: ${LORIS_SOURCE}
         LORIS_VERSION: ${LORIS_VERSION}
+    platform: linux/amd64
     environment:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
@@ -21,11 +21,12 @@ services:
       retries: 10
   web:
     build:
-      context: ./loris-base
-      dockerfile: loris.Dockerfile
+      context: ./loris-mri
+      dockerfile: loris-mri.Dockerfile
       args:
         LORIS_SOURCE: ${LORIS_SOURCE}
         LORIS_VERSION: ${LORIS_VERSION}
+    platform: linux/amd64
     ports:
       - "8080:80"
     environment:
