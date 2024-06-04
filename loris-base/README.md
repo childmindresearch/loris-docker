@@ -7,52 +7,55 @@ Loris installed without MRI Module.
 
 ### Build Args
 
-LORIS_SOURCE: Source for Loris install, either "release" or "git"
-- "release": Uses LORIS_VERSION to download release tarball and install
-- "git": Clones Loris repo and installs from HEAD
+- LORIS_SOURCE: Source for Loris install, either "release" or "git"
+  - "release": Uses LORIS_VERSION to download release tarball and install
+  - "git": Clones Loris repo and installs from HEAD
 
-LORIS_VERSION: Version for install when using LORIS_SOURCE="release"
-- Default: "25.0.2"
+- LORIS_VERSION: Version for install when using LORIS_SOURCE="release"
+  - Default: "25.0.2"
 
-LORIS_VERSION_TAG: "v${LORIS_VERSION}"
+- LORIS_VERSION_TAG: "v${LORIS_VERSION}"
 
 ### Install
 
-PROJECT_NAME: Name of apache config files, as well as included in data directory path.
-- Default: 'loris'
+- PROJECT_NAME: Name of apache config files, as well as included in data directory path.
+  - Default: 'loris'
 
-TZ: Timezone. 
-- Default: 'America/New_York'
+- TZ: Timezone. 
+  - Default: 'America/New_York'
 
 ### Runtime Config
 
-MYSQL_HOST
-MYSQL_DATABASE
-MYSQL_USER
-MYSQL_PASSWORD_FILE: Using docker-compose secrets to mount password file. Should be set to /run/secrets/<secret_name>
-MYSQL_ROOT_PASSWORD_FILE
+**Database Config**
+- MYSQL_HOST
+- MYSQL_DATABASE
+- MYSQL_USER
+- MYSQL_PASSWORD_FILE: Using docker-compose secrets to mount password file. Should be set to /run/secrets/<secret_name>
+- MYSQL_ROOT_PASSWORD_FILE
 
-LORIS_ADMIN_USER
-LORIS_ADMIN_PASSWORD_FILE: Using docker-compose secrets, e.g. /run/secrets/<secret_name>
-LORIS_EMAIL: Email address from which to send administrative emails.
-- TODO: Set up using msmtp and SMTP credentials.
+**Loris Runtime Config**
+- LORIS_ADMIN_USER
+- LORIS_ADMIN_PASSWORD_FILE: Using docker-compose secrets, e.g. /run/secrets/<secret_name>
+- LORIS_EMAIL: Email address from which to send administrative emails.
+  - TODO: Set up using msmtp and SMTP credentials.
 
-LORIS_HOST
-LORIS_PORT
+- LORIS_HOST
+- LORIS_PORT
 
-DEBUG_CONTAINER: Set to 1 or 0. If 1, do not run Loris install script, simply start container. Used to debug install process.
+**Special Variables**
+- DEBUG_CONTAINER: Set to 1 or 0. If 1, do not run Loris install script, simply start container. Used to debug install process.
 
 
 ### Post-Install Study Site Database Set-up
 
-SITE_NAME
-SITE_ALIAS
-MRI_ALIAS
-STUDY_SITE_YN
-VISIT_LABEL
-WINDOW_MIN_DAYS
-WINDOW_MAX_DAYS
-OPTIMUM_MIN_DAYS
-OPTIMUM_MAX_DAYS
-WINDOW_MIDPOINT_DAYS
-VISIT_LABEL
+- SITE_NAME
+- SITE_ALIAS
+- MRI_ALIAS
+- STUDY_SITE_YN
+- VISIT_LABEL
+- WINDOW_MIN_DAYS
+- WINDOW_MAX_DAYS
+- OPTIMUM_MIN_DAYS
+- OPTIMUM_MAX_DAYS
+- WINDOW_MIDPOINT_DAYS
+- VISIT_LABEL
