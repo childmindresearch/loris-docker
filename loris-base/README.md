@@ -59,3 +59,33 @@ Loris installed without MRI Module.
 - OPTIMUM_MAX_DAYS
 - WINDOW_MIDPOINT_DAYS
 - VISIT_LABEL
+
+
+### TODO
+
+PSCID Set-Up
+
+- in config.xml
+
+```xml
+<PSCID> 
+    <generation>user</generation> 
+    <structure>
+        <seq type="alphanumeric" length="2"/>
+    </structure>
+</PSCID>
+```
+
+**Project**
+
+```sql
+INSERT INTO Project (Name, recruitmentTarget) VALUES('%PROJECT_NAME%', NULL);
+```
+
+**Sites**
+
+```sql
+INSERT INTO psc (Name, Alias, MRI_alias, Study_site) VALUES ('Montreal','MTL','MTL','Y');
+```
+
+

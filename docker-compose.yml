@@ -7,6 +7,8 @@ services:
         LORIS_SOURCE: ${LORIS_SOURCE}
         LORIS_VERSION: ${LORIS_VERSION}
     platform: linux/amd64
+    ports:
+      - "3306:3306"
     environment:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
@@ -26,11 +28,14 @@ services:
       args:
         LORIS_SOURCE: ${LORIS_SOURCE}
         LORIS_VERSION: ${LORIS_VERSION}
+        LORIS_BASE: ${LORIS_BASE}
     platform: linux/amd64
     ports:
       - "8080:80"
+    volumes:
+      - loris-projects:/var/www/loris/project
+      - /Users/gabriel.schubiner/Documents/philani-code/data/linst:/etc/loris_instruments:ro
     environment:
-      # - LORIS_DB_CONFIG=/app/test/config.xml
       - LORIS_ADMIN_USER=${LORIS_ADMIN_USER}
       - MYSQL_HOST=db
       - MYSQL_DATABASE=${MYSQL_DATABASE}
@@ -41,6 +46,17 @@ services:
       - LORIS_HOST=localhost
       - LORIS_PORT=8080
       - LORIS_EMAIL=${LORIS_EMAIL}
+      - SITE_NAME=Philani
+      - SITE_ALIAS=PHI
+      - MRI_ALIAS=PHI
+      - STUDY_SITE_YN=Y
+      - VISIT_NAME=V1
+      - VISIT_LABEL=V1
+      - WINDOW_MIN_DAYS=0
+      - WINDOW_MAX_DAYS=100
+      - OPTIMUM_MIN_DAYS=40
+      - OPTIMUM_MAX_DAYS=60
+      - WINDOW_MIDPOINT_DAYS=50 
     depends_on:
       db:
         condition: service_healthy
@@ -48,6 +64,9 @@ services:
       - mysql_password
       - mysql_root_password
       - loris_admin_password
+
+volumes:
+  loris-projects:
 
 secrets:
   mysql_password:

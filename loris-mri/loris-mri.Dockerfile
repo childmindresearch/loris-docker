@@ -139,10 +139,6 @@ RUN chmod -R 770 /opt/${PROJECT_NAME} /data/${PROJECT_NAME} && \
 	chgrp www-data -R /data/incoming && \
 	chmod -R g+s /data/incoming
 
-# Add TPCCLIB from local repository because download is rate-limited and takes a long time.
-# ADD https://seafile.utu.fi/d/15843078fb/files/?p=%2Ftpcclib-0.8.0-Linux-x86_64.tar.gz&dl=1 /home/lorisadmin/
-ADD deps/tpcclib-0.8.0-Linux-x86_64.tar.gz /home/lorisadmin/tpcclib
-
 # Install TPCCLIB for HRRT PET
 RUN mkdir /usr/local/bin/tpcclib && \
     chmod 777 /usr/local/bin/tpcclib && \
