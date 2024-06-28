@@ -1,9 +1,22 @@
-# loris-docker
+# Loris Docker
 
 Docker build for Loris
 
-Currently only does basic install without MRI module.
 
-### Next Steps
+## Containers
 
-[] Install MRI module in same or separate container
+### Loris-Base
+
+Base Loris install.
+
+### Loris-MRI
+
+Base Loris install with MRI module added.
+
+### Loris-MYSQL
+
+MYSQL-derived image that adds the SQL files from the requested Loris install to the image. Needs to be rebuilt for different Loris versions.
+
+### MINC-toolkit
+
+Image to build MINC Toolkit. Not used currently, but available for MINC repository downtime.
