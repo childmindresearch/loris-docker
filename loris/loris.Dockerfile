@@ -1,16 +1,24 @@
 # LORIS_SOURCE can be either "release" or "git".
 # If "release", LORIS_VERSION refers to the release version.
 # If "git", pulls from HEAD.
-ARG LORIS_SOURCE="release"
-ARG LORIS_VERSION=25.0.2
-ARG LORIS_VERSION_TAG=v${LORIS_VERSION}
+ARG LORIS_SOURCE=release
 ARG LORIS_BASE=${LORIS_BASE:-loris-base}
-
-FROM ${LORIS_BASE} AS base
+FROM ${LORIS_BASE}:latest AS base
 LABEL org.childmind.image.authors="Gabriel Schubiner <gabriel.schubiner@childmind.org>"
 
-# Declare default environment variables for installation.
-ENV PROJECT_NAME="loris"
+## Declare default environment args and variables for installation. ##
+# Loris Version
+ARG LORIS_VERSION
+ENV LORIS_VERSION=${LORIS_VERSION:-26.0.0}
+ENV LORIS_VERSION_TAG=v${LORIS_VERSION}
+
+# Project
+ARG PROJECT_NAME
+ENV PROJECT_NAME=${PROJECT_NAME:-loris}
+
+## Variables used in initialization scripts ##
+# Site / Visit
+ENV BASE_PATH=/var/www/loris/
 ENV SITE_NAME=Montreal
 ENV SITE_ALIAS=MTL
 ENV MRI_ALIAS=MTL
@@ -30,6 +38,7 @@ RUN mkdir /home/lorisadmin/.npm && chown -R lorisadmin:lorisadmin /home/lorisadm
 
 # Install from Loris release
 FROM base AS loris-release
+RUN echo ${LORIS_VERSION_TAG}
 ADD --chown=lorisadmin:lorisadmin https://github.com/aces/Loris/archive/refs/tags/${LORIS_VERSION_TAG}.tar.gz /home/lorisadmin/
 RUN tar -xzf /home/lorisadmin/${LORIS_VERSION_TAG}.tar.gz -C /home/lorisadmin/ \
     && mv /home/lorisadmin/Loris-${LORIS_VERSION} /var/www/loris

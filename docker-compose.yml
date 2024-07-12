@@ -1,11 +1,12 @@
 services:
   db:
-    build:
-      context: ./loris-mysql
-      dockerfile: mysql.Dockerfile
-      args:
-        LORIS_SOURCE: ${LORIS_SOURCE}
-        LORIS_VERSION: ${LORIS_VERSION}
+    image: mysql:latest
+    # build:
+    #   context: ./loris-mysql
+    #   dockerfile: loris-mysql.Dockerfile
+    #   args:
+    #     LORIS_SOURCE: ${LORIS_SOURCE}
+    #     LORIS_VERSION: ${LORIS_VERSION}
     platform: linux/amd64
     ports:
       - "3306:3306"
@@ -22,13 +23,14 @@ services:
       timeout: 5s
       retries: 10
   web:
-    build:
-      context: ./loris-mri
-      dockerfile: loris-mri.Dockerfile
-      args:
-        LORIS_SOURCE: ${LORIS_SOURCE}
-        LORIS_VERSION: ${LORIS_VERSION}
-        LORIS_BASE: ${LORIS_BASE}
+    image: loris-mri:latest
+    # build:
+    #   context: ./loris-mri
+    #   dockerfile: loris-mri.Dockerfile
+    #   args:
+    #     LORIS_SOURCE: ${LORIS_SOURCE}
+    #     LORIS_VERSION: ${LORIS_VERSION}
+    #     LORIS_BASE: ${LORIS_BASE}
     platform: linux/amd64
     ports:
       - "8080:80"
@@ -46,17 +48,22 @@ services:
       - LORIS_HOST=localhost
       - LORIS_PORT=8080
       - LORIS_EMAIL=${LORIS_EMAIL}
+      - PROJECT_NAME=loris
       - SITE_NAME=Philani
       - SITE_ALIAS=PHI
       - MRI_ALIAS=PHI
       - STUDY_SITE_YN=Y
-      - VISIT_NAME=V1
-      - VISIT_LABEL=V1
+      - VISIT_LABELS=T1 T2
       - WINDOW_MIN_DAYS=0
       - WINDOW_MAX_DAYS=100
       - OPTIMUM_MIN_DAYS=40
       - OPTIMUM_MAX_DAYS=60
       - WINDOW_MIDPOINT_DAYS=50 
+      - DEFAULT_TEST_AGE_MIN_DAYS=1095
+      - DEFAULT_TEST_AGE_MAX_DAYS=5840
+      - DEFAULT_TEST_STAGE=Approved
+      - INSTALL_INSTRUMENT_BATTERY=True
+      # - DEBUG_CONTAINER=True
     depends_on:
       db:
         condition: service_healthy

@@ -16,6 +16,7 @@ RUN apt-get -qqq update && \
         libapache2-mod-php8.3 \
         libmysqlclient-dev \
         make \
+        msmtp \
         mysql-client \
         nodejs \
         npm \
