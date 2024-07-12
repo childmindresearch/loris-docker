@@ -2,14 +2,15 @@
 # If "release", LORIS_VERSION refers to the release version.
 # If "git", pulls from HEAD.
 ARG LORIS_SOURCE="release"
-ARG LORIS_VERSION=25.0.2
-ARG LORIS_VERSION_TAG=v${LORIS_VERSION}
 
 FROM mysql:latest AS base
 
 LABEL org.childmind.image.authors="Gabriel Schubiner <gabriel.schubiner@childmind.org>"
 
 ENV TZ="America/New_York"
+ARG LORIS_VERSION
+ENV LORIS_VERSION=${LORIS_VERSION:-26.0.0}
+ENV LORIS_VERSION_TAG=v${LORIS_VERSION}
 
 FROM base AS loris-release
 ADD https://github.com/aces/Loris/archive/refs/tags/v${LORIS_VERSION}.tar.gz /opt
