@@ -8,10 +8,12 @@ else
     # Install Loris configuration.
     echo "Configuring Loris..."
     /etc/entrypoint.d/install-loris.sh
+    echo "Done configuring Loris."
 
     # Install Loris MRI configuration.
     echo "Configuring Loris-MRI..."
     /etc/entrypoint.d/install-loris-mri.sh
+    echo "Done configuring Loris-MRI."
 fi
 
 exec "$@"

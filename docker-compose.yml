@@ -36,33 +36,45 @@ services:
       - "8080:80"
     volumes:
       - loris-projects:/var/www/loris/project
-      - /Users/gabriel.schubiner/Documents/philani-code/data/linst:/etc/loris_instruments:ro
+      - ${LORIS_LOCAL_INST_DIR}:/etc/loris_instruments:ro
     environment:
+      # Admin config
       - LORIS_ADMIN_USER=${LORIS_ADMIN_USER}
+      - LORIS_ADMIN_PASSWORD_FILE=/run/secrets/loris_admin_password
+      # Server config
+      - LORIS_HOST=localhost
+      - LORIS_PORT=8080
+      - PROJECT_NAME=loris
+      # DB config
       - MYSQL_HOST=db
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
       - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
-      - LORIS_ADMIN_PASSWORD_FILE=/run/secrets/loris_admin_password
-      - LORIS_HOST=localhost
-      - LORIS_PORT=8080
-      - LORIS_EMAIL=${LORIS_EMAIL}
-      - PROJECT_NAME=loris
+      # Site config
       - SITE_NAME=Philani
       - SITE_ALIAS=PHI
       - MRI_ALIAS=PHI
       - STUDY_SITE_YN=Y
+      # Visit config
       - VISIT_LABELS=T1 T2
       - WINDOW_MIN_DAYS=0
       - WINDOW_MAX_DAYS=100
       - OPTIMUM_MIN_DAYS=40
       - OPTIMUM_MAX_DAYS=60
       - WINDOW_MIDPOINT_DAYS=50 
+      # Default instrument / battery config
       - DEFAULT_TEST_AGE_MIN_DAYS=1095
       - DEFAULT_TEST_AGE_MAX_DAYS=5840
       - DEFAULT_TEST_STAGE=Approved
       - INSTALL_INSTRUMENT_BATTERY=True
+      # Email / SMTP config
+      - LORIS_EMAIL=${LORIS_EMAIL}
+      - SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_TLS=true
+      # DEBUG flag
       # - DEBUG_CONTAINER=True
     depends_on:
       db:
@@ -71,6 +83,7 @@ services:
       - mysql_password
       - mysql_root_password
       - loris_admin_password
+      - smtp_password
 
 volumes:
   loris-projects:
@@ -82,3 +95,5 @@ secrets:
     file: ./secrets/mysql_root_password.txt
   loris_admin_password:
     file: ./secrets/loris_admin_password.txt
+  smtp_password:
+    file: ./secrets/smtp_password.txt

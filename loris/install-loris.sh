@@ -2,13 +2,12 @@
 
 set -e
 
-# Set directory environment variables.
-BASE_PATH="/var/www/loris"
-DATA_DIR="/data/${PROJECT_NAME}/data/"
+CONFIG_XML="${BASE_PATH}/project/config.xml"
 
 # Load Secrets
 MYSQL_PASSWORD=$(<${MYSQL_PASSWORD_FILE})
 LORIS_ADMIN_PASSWORD=$(<${LORIS_ADMIN_PASSWORD_FILE})
+SMTP_PASSWORD=$(<${SMTP_PASSWORD_FILE})
 
 _update_config() {
     mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
@@ -76,10 +75,54 @@ EOF
 
 _install_db_schema() {
     echo "Setting up Loris database schema..."
-    for sql_file in "${BASE_PATH}/SQL/0000*.sql"; do
+    for sql_file in $BASE_PATH/SQL/0000*.sql; do
         echo "Installing ${sql_file}..."
         mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <${sql_file}
     done
+}
+
+_install_issue_tracker_dir() {
+    echo "Setting up issue tracker data directory..."
+    mkdir -p "${DATA_DIR}/issue_tracker/"
+    _update_config "IssueTrackerDataPath" "${DATA_DIR}/issue_tracker/"
+    chown -R lorisadmin:www-data "${DATA_DIR}"
+}
+
+_install_publications_dir() {
+    echo "Setting up publications data directory..."
+    mkdir -p "${DATA_DIR}/publication_uploads/to_be_deleted/"
+    _update_config "publication_uploads" "${DATA_DIR}/publication_uploads/"
+    _update_config "publication_deletions" "${DATA_DIR}/publication_uploads/to_be_deleted/"
+    chown -R lorisadmin:www-data "${DATA_DIR}"
+}
+
+_configure_mail() {
+    echo "Setting up Loris mail configuration..."
+    _update_config "mail" "${LORIS_EMAIL}"
+    _update_config "From" "${LORIS_EMAIL}"
+    _update_config "Reply-to" "${LORIS_EMAIL}"
+    cat <<EOF >/etc/msmtprc
+account default
+host ${SMTP_HOST}
+port ${SMTP_PORT}
+auth on
+user ${LORIS_EMAIL}
+password "${SMTP_PASSWORD}"
+from "${LORIS_EMAIL}"
+add_missing_from_header on
+logfile /var/log/apache2/msmtp.log
+EOF
+
+    if [[ -n "${SMTP_TLS}" ]]; then
+        cat <<EOF >>/etc/msmtprc
+tls on
+tls_starttls on
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+tls_certcheck on
+EOF
+    else
+        echo "tls off" >>/etc/msmtprc
+    fi
 }
 
 _install_loris() {
@@ -99,13 +142,13 @@ _install_loris() {
     _update_config "DownloadPath" "${BASE_PATH}"
     _update_config "url" "http://${LORIS_HOST}:${LORIS_PORT}"
     _update_config "host" "${LORIS_HOST}"
-    _update_config "data" "${DATA_DIR}"
-    _update_config "imagePath" "${DATA_DIR}"
-    _update_config "MRICodePath" "${DATA_DIR}"
+    _update_config "data" "${DATA_DIR}/"
+    _update_config "imagePath" "${DATA_DIR}/"
+    _update_config "MRICodePath" "${DATA_DIR}/"
     _update_config "JWTKey" $(cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9!\$^@#%&*()' | fold -w 32 | head -n 1)
 
     # Copy base configuration.
-    cp "${BASE_PATH}/docs/config/config.xml" "${BASE_PATH}/project/config.xml"
+    cp "${BASE_PATH}/docs/config/config.xml" "${CONFIG_XML}"
 
     # Replace placeholders with environment variables.
     sed -i \
@@ -113,16 +156,18 @@ _install_loris() {
         -e "s/%USERNAME%/${MYSQL_USER}/g" \
         -e "s/%PASSWORD%/${MYSQL_PASSWORD}/g" \
         -e "s/%DATABASE%/${MYSQL_DATABASE}/g" \
-        "${BASE_PATH}/project/config.xml"
-    chown lorisadmin:www-data "${BASE_PATH}/project/config.xml"
-    chmod 660 "${BASE_PATH}/project/config.xml"
+        "${CONFIG_XML}"
+    chown lorisadmin:www-data "${CONFIG_XML}"
+    chmod 660 "${CONFIG_XML}"
 }
 
 # Install Loris configuration.
-if [ ! -f "${BASE_PATH}/projects/config.xml" ] && [[ -z "${DEBUG_CONTAINER}" ]]; then
+if [ ! -f "${CONFIG_XML}" ] && [[ -z "${DEBUG_CONTAINER}" ]]; then
     echo "Loris configuration does not exist. Installing configuration."
     _install_db_schema
     _install_loris
+    _install_issue_tracker_dir
+    _install_publications_dir
 
     if [[ -n "${SITE_NAME}" ]]; then
         echo "Setting up Loris site..."

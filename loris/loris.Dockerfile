@@ -16,6 +16,9 @@ ENV LORIS_VERSION_TAG=v${LORIS_VERSION}
 ARG PROJECT_NAME
 ENV PROJECT_NAME=${PROJECT_NAME:-loris}
 
+ARG DATA_DIR
+ENV DATA_DIR=${DATA_DIR:-/data/${PROJECT_NAME}/data}
+
 ## Variables used in initialization scripts ##
 # Site / Visit
 ENV BASE_PATH=/var/www/loris/
@@ -87,6 +90,7 @@ RUN sed -i -e "s/^session.gc_maxlifetime =.*\$/session.gc_maxlifetime = 10800/" 
            -e "s/^max_execution_time =.*\$/max_execution_time = 10800/" \
            -e "s/^upload_max_filesize =.*\$/upload_max_filesize = 1024M/" \
            -e "s/^post_max_size =.*\$/post_max_size = 10800/" \
+           -e "s!^;sendmail_path =.*\$!/usr/bin/msmtp -C /etc/msmtprc -t!" \
         /etc/php/8.3/apache2/php.ini 
 
 # Install dependencies
