@@ -7,7 +7,9 @@ CONFIG_XML="${BASE_PATH}/project/config.xml"
 # Load Secrets
 MYSQL_PASSWORD=$(<${MYSQL_PASSWORD_FILE})
 LORIS_ADMIN_PASSWORD=$(<${LORIS_ADMIN_PASSWORD_FILE})
-SMTP_PASSWORD=$(<${SMTP_PASSWORD_FILE})
+if [[ -n ${SMTP_PASSWORD_FILE} ]]; then
+    SMTP_PASSWORD=$(<${SMTP_PASSWORD_FILE})
+fi
 
 _update_config() {
     mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
@@ -195,6 +197,13 @@ if [ ! -f "${CONFIG_XML}" ] && [[ -z "${DEBUG_CONTAINER}" ]]; then
         _install_instrument_battery
     else
         echo "Skipping battery installation."
+    fi
+
+    if [[-n "${LORIS_EMAIL}" && -n "${SMTP_HOST}" && -n ${SMTP_PASSWORD}]]; then
+        echo "Setting up Loris SMTP configuration..."
+        _configure_mail
+    else
+        echo "Skipping SMTP configuration."
     fi
 else
     echo "Skipping Loris configuration installation."
