@@ -8,7 +8,7 @@ ifdef NO_CACHE
 endif
 
 # Build artifact variables
-IMAGES := loris loris-base loris-mri loris-mri-base loris-mri-deps loris-mysql
+IMAGES := loris loris-base loris-mri loris-mri-base loris-mri-deps
 # buildstamp := docker-buildstamp
 # BUILDSTAMPS := $(addsuffix /$(buildstamp), $(IMAGES))
 
@@ -20,10 +20,6 @@ all: $(IMAGES)
 # $(IMAGES): %:
 # 	@echo "Building $@ container.."
 # 	$(docker-build)
-
-loris-mysql:
-	@echo "Building loris-mysql container.."
-	docker buildx build $(CACHE_ARG) --platform $(PLATFORM) -t loris-mysql:latest -f loris-mysql/loris-mysql.Dockerfile loris-mysql
 
 loris: loris-base
 	@echo "Building loris container.."
