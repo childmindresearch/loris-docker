@@ -1,0 +1,70 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  LORIS_SOURCE: release
+  LORIS_VERSION: "26.0.0"
+  PLATFORM: linux/amd64
+  LORIS_MRI_VERSION: "26.0.0"
+  NO_CACHE: false
+  GIT_COMMIT:
+    sh: git rev-parse --short HEAD
+  TIMESTAMP:
+    sh: date +%Y%m%d%H%M%S
+
+tasks:
+  loris:
+    cmds:
+      - task: build-docker
+        vars:
+          IMAGE: loris
+          IMAGE_NAME: loris
+          BUILD_ARGS: ["LORIS_SOURCE={{.LORIS_SOURCE}}", "LORIS_BASE=loris-base", "BASE_TAG=latest"]
+          TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest"]
+    deps: [loris-base]
+  loris-mri:
+    deps: [loris-mri-deps]
+    cmds:
+      - task: build-docker
+        vars:
+          IMAGE: loris-mri
+          IMAGE_NAME: loris-mri
+          BUILD_ARGS: ["LORIS_SOURCE={{.LORIS_SOURCE}}", "LORIS_MRI_VERSION={{.LORIS_MRI_VERSION}}", "BASE_TAG=latest"]
+          TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest"]
+  loris-mri-deps:
+    deps: [loris-mri-base]
+    cmds:
+      - task: build-docker
+        vars:
+          IMAGE: loris
+          IMAGE_NAME: loris-mri-deps
+          BUILD_ARGS: ["LORIS_SOURCE={{.LORIS_SOURCE}}", "LORIS_BASE=loris-mri-base", "BASE_TAG=latest"]
+          TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest"]
+  loris-mri-base:
+    deps: [loris-base]
+    cmds:
+      - task: build-docker
+        vars:
+          IMAGE: loris-mri-base
+          IMAGE_NAME: loris-mri-base
+          TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest"]
+  loris-base:
+    cmds:
+      - task: build-docker
+        vars:
+          IMAGE: loris-base
+          IMAGE_NAME: loris-base
+          TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest"]
+  build-docker:
+    internal: true
+    cmds:
+      - >-
+        docker buildx build 
+        {{if .NO_CACHE}}--no-cache{{end}}
+        {{if .PLATFORM}}{{printf "--platform %s" .PLATFORM}}{{end}}
+        {{range .BUILD_ARGS}}{{cat "--build-arg " . ""}}{{end}}
+        {{range .TAGS }}{{printf "-t %s:%s " $.IMAGE_NAME . }}{{end}}
+        -f {{.IMAGE}}/{{.IMAGE}}.Dockerfile {{.IMAGE}}
+    requires:
+      vars: [IMAGE, IMAGE_NAME]

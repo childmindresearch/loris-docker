@@ -3,7 +3,8 @@
 # If "git", pulls from HEAD.
 ARG LORIS_SOURCE=release
 ARG LORIS_BASE=${LORIS_BASE:-loris-base}
-FROM ${LORIS_BASE}:latest AS base
+ARG BASE_TAG=${BASE_TAG:-latest}
+FROM ${LORIS_BASE}:${BASE_TAG} AS base
 LABEL org.childmind.image.authors="Gabriel Schubiner <gabriel.schubiner@childmind.org>"
 
 ## Declare default environment args and variables for installation. ##
