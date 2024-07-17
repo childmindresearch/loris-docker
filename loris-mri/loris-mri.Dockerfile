@@ -26,31 +26,35 @@ RUN virtualenv ${MRI_BIN_DIR}/python_virtualenvs/loris-mri-python \
 # PATH=${MRI_BIN_DIR}/python_virtualenvs/loris-mri-python/bin:$PATH \
 
 # # Make data directories.
-RUN mkdir -m 2770 -p /data/${PROJECT_NAME}/data/ \
+RUN mkdir -m 2770 -p ${DATA_DIR} \
                      /data/incoming && \
     # Holds mincs that didn't match protocol
-    mkdir -m 770 -p /data/${PROJECT_NAME}/data/trashbin \
+    mkdir -m 770 -p ${DATA_DIR}/trashbin \
                     # Holds tared dicom-folder
-                    /data/${PROJECT_NAME}/data/tarchive \
+                    ${DATA_DIR}/tarchive \
                     # Holds tared hrrt-folder
-                    /data/${PROJECT_NAME}/data/hrrtarchive \
+                    ${DATA_DIR}/hrrtarchive \
                     # Holds jpegs generated for the MRI-browser
-                    /data/${PROJECT_NAME}/data/pic \
+                    ${DATA_DIR}/pic \
                     # Holds logs from pipeline script
-                    /data/${PROJECT_NAME}/data/logs \
+                    ${DATA_DIR}/logs \
                     # Holds the MINC files
-                    /data/${PROJECT_NAME}/data/assembly \
+                    ${DATA_DIR}/assembly \
                     # Holds the BIDS files derived from DICOMs
-                    /data/${PROJECT_NAME}/data/assembly_bids \
+                    ${DATA_DIR}/assembly_bids \
                     # Contains the result of the SGE (queue)
-                    /data/${PROJECT_NAME}/data/batch_output \
+                    ${DATA_DIR}/batch_output \
                     # Contains imported BIDS studies
-                    /data/${PROJECT_NAME}/data/bids_imports \
+                    ${DATA_DIR}/bids_imports \
                     ${MRI_BIN_DIR}/dicom-archive/.loris_mri && \
     chown -R lorisadmin:lorisadmin \
-        /data/${PROJECT_NAME}/data \
+        ${DATA_DIR} \
         ${MRI_BIN_DIR}/dicom-archive/.loris_mri \
         /data/incoming
+
+# Set up publications and issue_tracker data directory and permissions
+RUN mkdir -p "${DATA_DIR}/publication_uploads/to_be_deleted/" "${DATA_DIR}/issue_tracker/" \ 
+    chown -R lorisadmin:www-data "${DATA_DIR}/publication_uploads" "${DATA_DIR}/issue_tracker"
 
 RUN sed -i \
         -e "s#%PROJECT%#${PROJECT_NAME}#g" \
