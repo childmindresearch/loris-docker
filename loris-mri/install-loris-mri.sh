@@ -4,7 +4,27 @@ set -e
 
 export PATH=${PATH}:/usr/local/bin/tpcclib
 source /opt/${PROJECT_NAME}/bin/mri/environment
-MYSQL_PASSWORD=$(<${MYSQL_PASSWORD_FILE})
+
+# usage: file_env VAR [DEFAULT]
+#    ie: file_env 'XYZ_DB_PASSWORD' 'example'
+# (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
+#  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature)
+file_env() {
+	local var="$1"
+	local fileVar="${var}_FILE"
+	local def="${2:-}"
+	if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
+		mysql_error "Both $var and $fileVar are set (but are exclusive)"
+	fi
+	local val="$def"
+	if [ "${!var:-}" ]; then
+		val="${!var}"
+	elif [ "${!fileVar:-}" ]; then
+		val="$(< "${!fileVar}")"
+	fi
+	export "$var"="$val"
+	unset "$fileVar"
+}
 
 
 _update_config() {
@@ -13,7 +33,10 @@ _update_config() {
 }
 
 
-# Set up MRI config.
+# Set MYSQL_PASSWORD
+file_env MYSQL_PASSWORD
+
+# Set up MRI config
 sed -e "s#DBNAME#${MYSQL_DATABASE}#g" \
     -e "s#DBUSER#${MYSQL_USER}#g" \
     -e "s#DBPASS#${MYSQL_PASSWORD}#g" \

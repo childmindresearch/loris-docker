@@ -54,7 +54,7 @@ RUN mkdir -m 2770 -p ${DATA_DIR} \
 
 # Set up publications and issue_tracker data directory and permissions
 RUN mkdir -p "${DATA_DIR}/publication_uploads/to_be_deleted/" "${DATA_DIR}/issue_tracker/" \ 
-    chown -R lorisadmin:www-data "${DATA_DIR}/publication_uploads" "${DATA_DIR}/issue_tracker"
+    && chown -R lorisadmin:www-data "${DATA_DIR}/publication_uploads" "${DATA_DIR}/issue_tracker"
 
 RUN sed -i \
         -e "s#%PROJECT%#${PROJECT_NAME}#g" \

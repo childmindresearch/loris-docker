@@ -4,12 +4,26 @@ set -e
 
 CONFIG_XML="${BASE_PATH}/project/config.xml"
 
-# Load Secrets
-MYSQL_PASSWORD=$(<${MYSQL_PASSWORD_FILE})
-LORIS_ADMIN_PASSWORD=$(<${LORIS_ADMIN_PASSWORD_FILE})
-if [[ -n ${SMTP_PASSWORD_FILE} ]]; then
-    SMTP_PASSWORD=$(<${SMTP_PASSWORD_FILE})
-fi
+# usage: file_env VAR [DEFAULT]
+#    ie: file_env 'XYZ_DB_PASSWORD' 'example'
+# (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
+#  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature)
+file_env() {
+	local var="$1"
+	local fileVar="${var}_FILE"
+	local def="${2:-}"
+	if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
+		mysql_error "Both $var and $fileVar are set (but are exclusive)"
+	fi
+	local val="$def"
+	if [ "${!var:-}" ]; then
+		val="${!var}"
+	elif [ "${!fileVar:-}" ]; then
+		val="$(< "${!fileVar}")"
+	fi
+	export "$var"="$val"
+	unset "$fileVar"
+}
 
 _update_config() {
     mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
@@ -142,8 +156,40 @@ _install_loris_config_xml() {
 
 # Install Loris configuration.
 
-# Installation that modifies DB only.
+# Load Secrets
+file_env MYSQL_PASSWORD
+file_env LORIS_ADMIN_PASSWORD
+file_env SMTP_PASSWORD
 
+if [[ -z "${MYSQL_HOST}" || -z "${MYSQL_USER}" || -z "${MYSQL_PASSWORD}" || -z "${MYSQL_DATABASE}" ]]; then
+    echo "Missing required environment database environment variables:"
+    if [[ -z "${MYSQL_HOST}" ]]; then
+        echo "MYSQL_HOST is not set."
+    fi
+    if [[ -z "${MYSQL_USER}" ]]; then
+        echo "MYSQL_USER is not set."
+    fi
+    if [[ -z "${MYSQL_PASSWORD}" ]]; then
+        echo "MYSQL_PASSWORD is not set."
+    fi
+    if [[ -z "${MYSQL_DATABASE}" ]]; then
+        echo "MYSQL_DATABASE is not set."
+    fi
+    exit 1
+fi
+
+if [[ -z "${LORIS_ADMIN_USER}" || -z "${LORIS_ADMIN_PASSWORD}" ]]; then
+    echo "Missing required environment variables:"
+    if [[ -z "${LORIS_ADMIN_USER}" ]]; then
+        echo "LORIS_ADMIN_USER is not set."
+    fi
+    if [[ -z "${LORIS_ADMIN_PASSWORD}" ]]; then
+        echo "LORIS_ADMIN_PASSWORD is not set."
+    fi
+    exit 1
+fi
+
+# Installation that modifies DB only.
 if [[ -n "${INSTALL_DB}" ]]; then
     echo "Installing Loris database..."
     _install_db_schema
