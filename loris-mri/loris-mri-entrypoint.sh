@@ -7,6 +7,7 @@ if [[ -n "${DEBUG_CONTAINER}" ]]; then
 elif [[ -f "${CONFIG_XML}" ]]; then
     echo "Loris configuration exists. Skipping Loris configuration installation."
 else
+    echo "### Starting Installation ###"
     # Install Loris configuration.
     echo "Configuring Loris..."
     /etc/entrypoint.d/install-loris.sh
@@ -16,6 +17,8 @@ else
     echo "Configuring Loris-MRI..."
     /etc/entrypoint.d/install-loris-mri.sh
     echo "Done configuring Loris-MRI."
+    echo "### Installation Complete ###"
 fi
 
+echo "Executing CMD: $@"
 exec "$@"

@@ -8,21 +8,21 @@ CONFIG_XML="${BASE_PATH}/project/config.xml"
 #    ie: file_env 'XYZ_DB_PASSWORD' 'example'
 # (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
 #  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature)
-file_env() {
-	local var="$1"
-	local fileVar="${var}_FILE"
-	local def="${2:-}"
-	if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
-		mysql_error "Both $var and $fileVar are set (but are exclusive)"
-	fi
-	local val="$def"
-	if [ "${!var:-}" ]; then
-		val="${!var}"
-	elif [ "${!fileVar:-}" ]; then
-		val="$(< "${!fileVar}")"
-	fi
-	export "$var"="$val"
-	unset "$fileVar"
+_file_env() {
+    local var="$1"
+    local fileVar="${var}_FILE"
+    local def="${2:-}"
+    if [[ "${!var:-}" && "${!fileVar:-}" ]]; then
+        echo "Both $var and $fileVar are set (but are exclusive). $var takes precedence."
+    fi
+    local val="$def"
+    if [[ "${!var:-}" ]]; then
+        val="${!var}"
+    elif [[ "${!fileVar:-}" ]]; then
+        val="$(<"${!fileVar}")"
+    fi
+    export "$var"="$val"
+    unset "$fileVar"
 }
 
 _update_config() {
@@ -73,7 +73,7 @@ _install_instruments() {
         cp ${instrument_file} "${BASE_PATH}/project/instruments/"
         echo "Generating ${instrument} SQL tables and testNames..."
         php generate_tables_sql_and_testNames.php <${instrument_file}
-        if [[ -n "${INSTALL_DB}"]]; then
+        if [[ -n "${INSTALL_DB}" ]]; then
             echo "Installing ${instrument} in database..."
             mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <"${BASE_PATH}/project/tables_sql/${instrument}.sql"
             echo "Done installing ${instrument}."
@@ -89,6 +89,23 @@ _install_instrument_battery() {
 INSERT INTO test_battery (Test_name, AgeMinDays, AgeMaxDays, Active, Stage, Visit_label, CenterID) 
     SELECT Test_name, ${DEFAULT_TEST_AGE_MIN_DAYS}, ${DEFAULT_TEST_AGE_MAX_DAYS}, 'Y', '${DEFAULT_TEST_STAGE}', 'VisitLabel', 2 FROM test_names CROSS JOIN visit;
 EOF
+}
+
+_create_db_and_user() {
+    echo "Creating database: ${MYSQL_DATABASE}..."
+    echo "Root Password: ${MYSQL_ROOT_PASSWORD}"
+    mysql --host=${MYSQL_HOST} --user=root --password=${MYSQL_ROOT_PASSWORD} \
+        -e "CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE} ;"
+    # Create the database user
+    echo "Creating user: ${MYSQL_USER}..."
+    mysql --host=${MYSQL_HOST} --user=root --password=${MYSQL_ROOT_PASSWORD} \
+        -e "CREATE USER '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}' ;"
+    # Grant all privileges on the database to the user
+    # NOTE: Cannot GRANT ALL as this is disallowed by RDS.
+    echo "Granting privileges to user: ${MYSQL_USER}..."
+    # RELOAD, PROCESS, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT, CREATE USER,
+    mysql --host=${MYSQL_HOST} --user=root --password=${MYSQL_ROOT_PASSWORD} \
+        -e "GRANT ALTER, ALTER ROUTINE, CREATE, CREATE ROUTINE, CREATE TEMPORARY TABLES, CREATE VIEW, DELETE, DROP, EVENT, EXECUTE, INDEX, INSERT, LOCK TABLES, REFERENCES, SELECT, SHOW VIEW, TRIGGER, UPDATE ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%' WITH GRANT OPTION;"
 }
 
 _install_db_schema() {
@@ -157,9 +174,10 @@ _install_loris_config_xml() {
 # Install Loris configuration.
 
 # Load Secrets
-file_env MYSQL_PASSWORD
-file_env LORIS_ADMIN_PASSWORD
-file_env SMTP_PASSWORD
+_file_env MYSQL_PASSWORD
+_file_env MYSQL_ROOT_PASSWORD
+_file_env LORIS_ADMIN_PASSWORD
+_file_env SMTP_PASSWORD
 
 if [[ -z "${MYSQL_HOST}" || -z "${MYSQL_USER}" || -z "${MYSQL_PASSWORD}" || -z "${MYSQL_DATABASE}" ]]; then
     echo "Missing required environment database environment variables:"
@@ -187,6 +205,13 @@ if [[ -z "${LORIS_ADMIN_USER}" || -z "${LORIS_ADMIN_PASSWORD}" ]]; then
         echo "LORIS_ADMIN_PASSWORD is not set."
     fi
     exit 1
+fi
+
+if [[ -n "${CREATE_DB}" ]]; then
+    echo "Creating database and user..."
+    _create_db_and_user
+else
+    echo "Skipping database creation."
 fi
 
 # Installation that modifies DB only.
@@ -233,7 +258,7 @@ else
     echo "Skipping battery installation."
 fi
 
-if [[-n "${LORIS_EMAIL}" && -n "${SMTP_HOST}" && -n ${SMTP_PASSWORD}]]; then
+if [[ -n "${LORIS_EMAIL}" && -n "${SMTP_HOST}" && -n ${SMTP_PASSWORD} ]]; then
     echo "Setting up Loris SMTP configuration..."
     _configure_mail
 else

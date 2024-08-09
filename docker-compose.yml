@@ -11,12 +11,8 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
       - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
     secrets:
-      - mysql_password
       - mysql_root_password
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
@@ -73,7 +69,11 @@ services:
       - SMTP_PASSWORD_FILE=/run/secrets/smtp_password
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
-      - SMTP_TLS=true
+      - SMTP_TLS=True
+      # Database params
+      # CREATE_DB required for RDS, not for compose MySQL container that creates DB and user on start
+      - CREATE_DB=True
+      - INSTALL_DB=True
       # DEBUG flag
       # - DEBUG_CONTAINER=True
     depends_on:

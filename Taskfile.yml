@@ -2,6 +2,7 @@
 
 version: '3'
 
+dotenv: [secrets/aws-ecr.env]
 vars:
   LORIS_SOURCE: release
   LORIS_VERSION: "26.0.0"
@@ -12,6 +13,8 @@ vars:
     sh: git rev-parse --short HEAD
   TIMESTAMP:
     sh: date +%Y%m%d%H%M%S
+  AWS_ECR_REPO: "{{.AWS_ACCOUNT_ID}}.dkr.ecr.{{.AWS_ECR_REGION}}.amazonaws.com/{{.AWS_ECR_REPO_NAME}}"
+  AWS_ECR_REPO_TAG: "{{.AWS_ACCOUNT_ID}}.dkr.ecr.{{.AWS_ECR_REGION}}.amazonaws.com/{{.AWS_ECR_REPO_NAME}}:{{.AWS_ECR_IMAGE_TAG}}"
 
 tasks:
   loris:
@@ -31,7 +34,7 @@ tasks:
           IMAGE: loris-mri
           IMAGE_NAME: loris-mri
           BUILD_ARGS: ["LORIS_SOURCE={{.LORIS_SOURCE}}", "LORIS_MRI_VERSION={{.LORIS_MRI_VERSION}}", "BASE_TAG=latest"]
-          TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest"]
+          TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest", "{{.AWS_ECR_REPO_TAG}}"]
   loris-mri-deps:
     deps: [loris-mri-base]
     cmds:
@@ -56,6 +59,12 @@ tasks:
           IMAGE: loris-base
           IMAGE_NAME: loris-base
           TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest"]
+  push-ecr:
+    cmds:
+      - >-
+        aws ecr get-login-password --region {{.AWS_REGION}} | docker login --username AWS --password-stdin "{{.AWS_ACCOUNT_ID}}.dkr.ecr.{{.AWS_ECR_REGION}}.amazonaws.com/{{.AWS_ECR_REPO_NAME}}"
+      - >-
+        docker push {{.AWS_ECR_REPO_TAG}}
   build-docker:
     internal: true
     cmds:

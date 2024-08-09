@@ -10,6 +10,8 @@ else
     # Install Loris configuration.
     echo "Configuring Loris..."
     /etc/entrypoint.d/install-loris.sh
+    echo "Done configuring Loris."
 fi
 
+echo "Executing CMD: $@"
 exec "$@"
