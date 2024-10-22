@@ -19,7 +19,7 @@ services:
       timeout: 5s
       retries: 10
   web:
-    image: loris-mri:latest
+    image: loris:latest
     # build:
     #   context: ./loris-mri
     #   dockerfile: loris-mri.Dockerfile

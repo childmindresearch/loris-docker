@@ -2,6 +2,8 @@
 
 set -e
 
+export CONFIG_XML="${BASE_PATH}/project/config.xml"
+
 if [[ -n "${DEBUG_CONTAINER}" ]]; then
     echo "DEBUG_CONTAINER is set. Skipping Loris configuration installation."
 elif [[ -f "${CONFIG_XML}" ]]; then

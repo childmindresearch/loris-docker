@@ -2,8 +2,6 @@
 
 set -e
 
-CONFIG_XML="${BASE_PATH}/project/config.xml"
-
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'XYZ_DB_PASSWORD' 'example'
 # (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
