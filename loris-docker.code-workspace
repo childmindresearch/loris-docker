@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../loris-pulumi"
+		},
+		{
+			"path": "../loris-pulumi-export"
 		}
 	],
 	"settings": {}

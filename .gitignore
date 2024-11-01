@@ -3,3 +3,5 @@
 secrets/*.txt
 secrets/*.env
 .env
+
+*.code-workspace

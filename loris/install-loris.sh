@@ -71,7 +71,7 @@ _install_instruments() {
         cp ${instrument_file} "${BASE_PATH}/project/instruments/"
         echo "Generating ${instrument} SQL tables and testNames..."
         php generate_tables_sql_and_testNames.php <${instrument_file}
-        if [[ -n "${INSTALL_DB}" ]]; then
+        if [[ "${INSTALL_DB}" == "True" ]]; then
             echo "Installing ${instrument} in database..."
             mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <"${BASE_PATH}/project/tables_sql/${instrument}.sql"
             echo "Done installing ${instrument}."
@@ -205,7 +205,7 @@ if [[ -z "${LORIS_ADMIN_USER}" || -z "${LORIS_ADMIN_PASSWORD}" ]]; then
     exit 1
 fi
 
-if [[ -n "${CREATE_DB}" ]]; then
+if [[ "${CREATE_DB}" == "True" ]]; then
     echo "Creating database and user..."
     _create_db_and_user
 else
@@ -213,7 +213,7 @@ else
 fi
 
 # Installation that modifies DB only.
-if [[ -n "${INSTALL_DB}" ]]; then
+if [[ "${INSTALL_DB}" == "True" ]]; then
     echo "Installing Loris database..."
     _install_db_schema
 
@@ -249,14 +249,14 @@ else
     echo "Instruments directory does not exist. Skipping instrument installation."
 fi
 
-if [[ -n "${INSTALL_INSTRUMENT_BATTERY}" ]]; then
+if [[ "${INSTALL_INSTRUMENT_BATTERY}" == "True" ]]; then
     echo "Setting up Loris database with user additions..."
     _install_instrument_battery
 else
     echo "Skipping battery installation."
 fi
 
-if [[ -n "${LORIS_EMAIL}" && -n "${SMTP_HOST}" && -n ${SMTP_PASSWORD} ]]; then
+if [[ -n "${LORIS_EMAIL}" && -n "${SMTP_HOST}" && -n "${SMTP_PASSWORD}" ]]; then
     echo "Setting up Loris SMTP configuration..."
     _configure_mail
 else
