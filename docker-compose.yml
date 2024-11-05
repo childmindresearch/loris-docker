@@ -72,8 +72,8 @@ services:
       - SMTP_TLS=True
       # Database params
       # CREATE_DB required for RDS, not for compose MySQL container that creates DB and user on start
-      - CREATE_DB=True
-      - INSTALL_DB=True
+      - CREATE_DB=true
+      - INSTALL_DB=true
       # DEBUG flag
       # - DEBUG_CONTAINER=True
     depends_on:

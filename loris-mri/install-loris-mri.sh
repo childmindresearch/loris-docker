@@ -58,7 +58,7 @@ chmod 640 ${MRI_BIN_DIR}/dicom-archive/.loris_mri/database_config.py
 chgrp www-data ${MRI_BIN_DIR}/dicom-archive/.loris_mri/database_config.py
 echo "Done setting up MRI module database configuration file."
 
-if [[ -n "${INSTALL_DB}" ]]; then
+if [[ "${INSTALL_DB}" == "True" ]]; then
     echo "Setting up MRI database config..."
     _update_config 'dataDirBasepath' "${DATA_DIR}/"
     _update_config 'imagePath' "${DATA_DIR}/"
