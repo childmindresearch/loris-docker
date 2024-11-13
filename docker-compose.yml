@@ -59,6 +59,9 @@ services:
       - OPTIMUM_MIN_DAYS=40
       - OPTIMUM_MAX_DAYS=60
       - WINDOW_MIDPOINT_DAYS=50 
+      # Cohort config
+      # Currently doesn't install new cohorts, only selects which of 'Control' or 'Experimental' to connect to project.
+      - COHORT_LABELS=Control
       # Default instrument / battery config
       - DEFAULT_TEST_AGE_MIN_DAYS=1095
       - DEFAULT_TEST_AGE_MAX_DAYS=5840
@@ -72,8 +75,8 @@ services:
       - SMTP_TLS=True
       # Database params
       # CREATE_DB required for RDS, not for compose MySQL container that creates DB and user on start
-      - CREATE_DB=true
-      - INSTALL_DB=true
+      - CREATE_DB=True
+      - INSTALL_DB=True
       # DEBUG flag
       # - DEBUG_CONTAINER=True
     depends_on:

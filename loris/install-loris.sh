@@ -58,6 +58,15 @@ EOF
     done
 }
 
+_install_visit_project_cohort_rel() {
+    mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
+INSERT INTO project_cohort_rel (ProjectCohortRelID, ProjectID, CohortID) VALUES (1, 1, 1);
+EOF
+    mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
+INSERT INTO visit_project_cohort_rel (VisitProjectCohortRelID, VisitID, ProjectCohortRelID) VALUES (1, 1, 1);
+EOF
+}
+
 _install_instruments() {
     cd "${BASE_PATH}/tools/"
     for instrument_file in /etc/loris_instruments/*.linst; do
@@ -233,6 +242,14 @@ if [[ "${INSTALL_DB}" == "True" ]]; then
         _initialize_visits
     else
         echo "VISIT_LABELS is not set. Skipping visit initialization."
+    fi
+
+    # TODO
+    if [[ -n "${COHORT_LABELS}" ]]; then
+        echo "Setting up Loris visit project cohort relationship..."
+        _install_visit_project_cohort_rel
+    else
+        echo "COHORT_LABELS is not set. Skipping visit project cohort relationship initialization."
     fi
 
 else
