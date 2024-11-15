@@ -32,7 +32,7 @@ services:
       - "8080:80"
     volumes:
       - loris-projects:/var/www/loris/project
-      - ${LORIS_LOCAL_INST_DIR}:/etc/loris_instruments:ro
+      - ${LORIS_LOCAL_INST_DIR:-./local_instruments}:/etc/loris_instruments:ro
     environment:
       # Admin config
       - LORIS_ADMIN_USER=${LORIS_ADMIN_USER}
@@ -60,7 +60,9 @@ services:
       - OPTIMUM_MAX_DAYS=60
       - WINDOW_MIDPOINT_DAYS=50 
       # Cohort config
-      # Currently doesn't install new cohorts, only selects which of 'Control' or 'Experimental' to connect to project.
+      # Cohort Labels listed here will be connected to:
+      # - Project specified in PROJECT_NAME
+      # - Visit Labels specified in VISIT_LABELS
       - COHORT_LABELS=Control
       # Default instrument / battery config
       - DEFAULT_TEST_AGE_MIN_DAYS=1095

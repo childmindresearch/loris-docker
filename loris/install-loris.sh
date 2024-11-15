@@ -50,25 +50,51 @@ EOF
 }
 
 _initialize_visits() {
-    for V in ${VISIT_LABELS}; do
+    for VISIT in ${VISIT_LABELS}; do
         mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
-INSERT INTO Visit_Windows (Visit_label,  WindowMinDays, WindowMaxDays, OptimumMinDays, OptimumMaxDays, WindowMidpointDays) VALUES ('${V}', ${WINDOW_MIN_DAYS}, ${WINDOW_MAX_DAYS}, ${OPTIMUM_MIN_DAYS}, ${OPTIMUM_MAX_DAYS}, ${WINDOW_MIDPOINT_DAYS});
-INSERT INTO visit (VisitName, VisitLabel) VALUES ('${V}', '${V}');
+INSERT INTO Visit_Windows (Visit_label,  WindowMinDays, WindowMaxDays, OptimumMinDays, OptimumMaxDays, WindowMidpointDays) VALUES ('${VISIT}', ${WINDOW_MIN_DAYS}, ${WINDOW_MAX_DAYS}, ${OPTIMUM_MIN_DAYS}, ${OPTIMUM_MAX_DAYS}, ${WINDOW_MIDPOINT_DAYS});
+INSERT INTO visit (VisitName, VisitLabel) VALUES ('${VISIT}', '${VISIT}');
+EOF
+        for COHORT in ${COHORT_LABELS}; do
+            mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
+INSERT INTO visit_project_cohort_rel (VisitID, ProjectCohortRelID) 
+VALUES (
+    (SELECT VisitID FROM visit WHERE VisitName='${VISIT}'),
+    (
+        SELECT ProjectCohortRelID FROM project_cohort_rel 
+            WHERE ProjectID=(SELECT ProjectID FROM Project WHERE Name='${PROJECT_NAME}') 
+            AND CohortID=(SELECT CohortID FROM cohort WHERE title='${COHORT}')
+    )
+);
+EOF
+        done
+    done
+}
+
+# Install relationships for default project and cohorts.
+_initialize_cohorts() {
+    for COHORT in ${COHORT_LABELS}; do
+        # Install Cohorts, skipping default values.
+        if [[ "${COHORT}" != "Control" && "${COHORT}" != "Experimental" ]]; then
+            mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
+INSERT INTO cohort (title, useEDC, WindowDifference) VALUES ('${COHORT}', false, 'optimal');
+EOF
+        fi
+
+        # Install Project-Cohort relationships.
+        mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
+INSERT INTO project_cohort_rel (ProjectID, CohortID) 
+VALUES ( 
+    (SELECT ProjectID FROM Project WHERE Name = 'loris'), 
+    (SELECT CohortID from cohort where title = 'Control')
+);
 EOF
     done
 }
 
-_install_visit_project_cohort_rel() {
-    mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
-INSERT INTO project_cohort_rel (ProjectCohortRelID, ProjectID, CohortID) VALUES (1, 1, 1);
-EOF
-    mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
-INSERT INTO visit_project_cohort_rel (VisitProjectCohortRelID, VisitID, ProjectCohortRelID) VALUES (1, 1, 1);
-EOF
-}
-
 _install_instruments() {
     cd "${BASE_PATH}/tools/"
+    shopt -s nullglob
     for instrument_file in /etc/loris_instruments/*.linst; do
         local instrument_filename=$(basename ${instrument_file})
         local instrument=${instrument_filename%.linst}
@@ -237,19 +263,18 @@ if [[ "${INSTALL_DB}" == "True" ]]; then
         echo "Skipping site initialization."
     fi
 
+    if [[ -n "${COHORT_LABELS}" ]]; then
+        echo "Setting up Loris cohorts, and cohort-project relationship..."
+        _initialize_cohorts
+    else
+        echo "COHORT_LABELS is not set. Skipping cohort initialization."
+    fi
+
     if [[ -n "${VISIT_LABELS}" ]]; then
         echo "Setting up Loris visits..."
         _initialize_visits
     else
         echo "VISIT_LABELS is not set. Skipping visit initialization."
-    fi
-
-    # TODO
-    if [[ -n "${COHORT_LABELS}" ]]; then
-        echo "Setting up Loris visit project cohort relationship..."
-        _install_visit_project_cohort_rel
-    else
-        echo "COHORT_LABELS is not set. Skipping visit project cohort relationship initialization."
     fi
 
 else
