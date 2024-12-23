@@ -4,4 +4,6 @@ secrets/*.txt
 secrets/*.env
 .env
 
+local_instruments/*
+
 *.code-workspace
