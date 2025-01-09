@@ -29,6 +29,7 @@ RUN apt-get -qqq update && \
         php8.3-zip \
         software-properties-common \
         unzip \
+        xmlstarlet \
         zip \
     && rm -rf /var/lib/apt/lists/*
 

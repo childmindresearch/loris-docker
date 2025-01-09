@@ -41,6 +41,7 @@ services:
       - LORIS_HOST=localhost
       - LORIS_PORT=8080
       - PROJECT_NAME=loris
+      - MANUAL_PSCID_GENERATION=True
       # DB config
       - MYSQL_HOST=db
       - MYSQL_DATABASE=${MYSQL_DATABASE}

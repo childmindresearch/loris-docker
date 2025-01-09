@@ -51,11 +51,13 @@ EOF
 
 _initialize_visits() {
     for VISIT in ${VISIT_LABELS}; do
+        echo "Installing visit ${VISIT}..."
         mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
 INSERT INTO Visit_Windows (Visit_label,  WindowMinDays, WindowMaxDays, OptimumMinDays, OptimumMaxDays, WindowMidpointDays) VALUES ('${VISIT}', ${WINDOW_MIN_DAYS}, ${WINDOW_MAX_DAYS}, ${OPTIMUM_MIN_DAYS}, ${OPTIMUM_MAX_DAYS}, ${WINDOW_MIDPOINT_DAYS});
 INSERT INTO visit (VisitName, VisitLabel) VALUES ('${VISIT}', '${VISIT}');
 EOF
         for COHORT in ${COHORT_LABELS}; do
+            echo "Installing visit-cohort relationship for ${VISIT} and ${COHORT}..."
             mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
 INSERT INTO visit_project_cohort_rel (VisitID, ProjectCohortRelID) 
 VALUES (
@@ -76,17 +78,19 @@ _initialize_cohorts() {
     for COHORT in ${COHORT_LABELS}; do
         # Install Cohorts, skipping default values.
         if [[ "${COHORT}" != "Control" && "${COHORT}" != "Experimental" ]]; then
+            echo "Installing cohort ${COHORT}..."
             mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
 INSERT INTO cohort (title, useEDC, WindowDifference) VALUES ('${COHORT}', false, 'optimal');
 EOF
         fi
 
         # Install Project-Cohort relationships.
+        echo "Installing project-cohort relationship for ${COHORT}..."
         mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
 INSERT INTO project_cohort_rel (ProjectID, CohortID) 
 VALUES ( 
-    (SELECT ProjectID FROM Project WHERE Name = 'loris'), 
-    (SELECT CohortID from cohort where title = 'Control')
+    (SELECT ProjectID FROM Project WHERE Name = '${PROJECT_NAME}'), 
+    (SELECT CohortID from cohort where title = '${COHORT}')
 );
 EOF
     done
@@ -120,7 +124,7 @@ _install_instrument_battery() {
     echo "Setting up Loris battery with all instruments..."
     mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
 INSERT INTO test_battery (Test_name, AgeMinDays, AgeMaxDays, Active, Stage, Visit_label, CenterID) 
-    SELECT Test_name, ${DEFAULT_TEST_AGE_MIN_DAYS}, ${DEFAULT_TEST_AGE_MAX_DAYS}, 'Y', '${DEFAULT_TEST_STAGE}', 'VisitLabel', 2 FROM test_names CROSS JOIN visit;
+    SELECT Test_name, ${DEFAULT_TEST_AGE_MIN_DAYS}, ${DEFAULT_TEST_AGE_MAX_DAYS}, 'Y', '${DEFAULT_TEST_STAGE}', VisitLabel, 2 FROM test_names CROSS JOIN visit;
 EOF
 }
 
@@ -143,7 +147,7 @@ _create_db_and_user() {
 
 _install_db_schema() {
     echo "Setting up Loris database schema..."
-    for sql_file in $BASE_PATH/SQL/0000*.sql; do
+    for sql_file in ${BASE_PATH}/SQL/0000*.sql; do
         echo "Installing ${sql_file}..."
         mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <${sql_file}
     done
@@ -179,8 +183,8 @@ EOF
 }
 
 _install_loris_db_config() {
-    _update_config "base" "${BASE_PATH}"
-    _update_config "DownloadPath" "${BASE_PATH}"
+    _update_config "base" "${BASE_PATH}/"
+    _update_config "DownloadPath" "${BASE_PATH}/"
     _update_config "url" "http://${LORIS_HOST}:${LORIS_PORT}"
     _update_config "host" "${LORIS_HOST}"
     _update_config "data" "${DATA_DIR}/"
@@ -200,6 +204,16 @@ _install_loris_config_xml() {
         -e "s/%PASSWORD%/${MYSQL_PASSWORD}/g" \
         -e "s/%DATABASE%/${MYSQL_DATABASE}/g" \
         "${CONFIG_XML}"
+
+    if [[ "${MANUAL_PSCID_GENERATION}" == "True" ]]; then
+        # Set PSCID generation to manual.
+        echo "Setting PSCID generation to manual..."
+        xmlstarlet ed -L \
+            -d config/study/PSCID/structure \
+            -u config/study/PSCID/generation -v "user" \
+            "${CONFIG_XML}"
+    fi
+
     chown lorisadmin:www-data "${CONFIG_XML}"
     chmod 660 "${CONFIG_XML}"
 }

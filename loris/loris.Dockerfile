@@ -22,7 +22,7 @@ ENV DATA_DIR=${DATA_DIR:-/data/${PROJECT_NAME}/data}
 
 ## Variables used in initialization scripts ##
 # Site / Visit
-ENV BASE_PATH=/var/www/loris/
+ENV BASE_PATH=/var/www/loris
 ENV SITE_NAME=Montreal
 ENV SITE_ALIAS=MTL
 ENV MRI_ALIAS=MTL
