@@ -209,8 +209,11 @@ _install_loris_config_xml() {
         # Set PSCID generation to manual.
         echo "Setting PSCID generation to manual..."
         xmlstarlet ed -L \
-            -d config/study/PSCID/structure \
-            -u config/study/PSCID/generation -v "user" \
+            -d "config/study/PSCID/structure/seq[@type='siteAbbrev']" \
+            -d "config/study/PSCID/structure/seq/@length" \
+            -i "config/study/PSCID/structure/seq[@type='alphanumeric']" -t attr -n maxLength -v 20 \
+            -i "config/study/PSCID/structure/seq[@type='alphanumeric']" -t attr -n minLength -v 1 \
+            -u "config/study/PSCID/generation" -v "user" \
             "${CONFIG_XML}"
     fi
 
