@@ -70,6 +70,7 @@ services:
       - DEFAULT_TEST_AGE_MAX_DAYS=5840
       - DEFAULT_TEST_STAGE=Approved
       - INSTALL_INSTRUMENT_BATTERY=True
+      - DEFAULT_COHORT=Control
       # Email / SMTP config
       - LORIS_EMAIL=${LORIS_EMAIL}
       - SMTP_PASSWORD_FILE=/run/secrets/smtp_password

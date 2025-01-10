@@ -23,52 +23,58 @@ _file_env() {
     unset "$fileVar"
 }
 
+_mysql_cmd() {
+    echo "Running MYSQL command: ${1}"
+    mysql -s --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --database=${MYSQL_DATABASE} -e "${1}"
+}
+
+_mysql_root_cmd() {
+    echo "Running MYSQL ROOT command: ${1}"
+    mysql -s --host=${MYSQL_HOST} --user=root --password=${MYSQL_ROOT_PASSWORD} -e "${1}"
+}
+
 _update_config() {
-    mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
-        -e "UPDATE Config SET Value='$2' WHERE ConfigID=(SELECT ID FROM ConfigSettings WHERE Name='$1')" ${MYSQL_DATABASE}
+    _mysql_cmd "UPDATE Config SET Value='${2}' WHERE ConfigID=(SELECT ID FROM ConfigSettings WHERE Name='${1}')"
+    # mysql -s --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
+    #     -e "UPDATE Config SET Value='$2' WHERE ConfigID=(SELECT ID FROM ConfigSettings WHERE Name='$1')" ${MYSQL_DATABASE}
 }
 
 _set_admin_pass() {
     local LORIS_ADMIN_PASSWORD_HASH=$(
         echo -n $2 | php -r 'echo password_hash(file_get_contents("php://stdin"), PASSWORD_DEFAULT);'
     )
-    mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
-        -e "UPDATE users SET UserID='${1}', Password_hash='${LORIS_ADMIN_PASSWORD_HASH}', Email='${LORIS_EMAIL}', Active='Y' WHERE ID=1" ${MYSQL_DATABASE}
+    _mysql_cmd "UPDATE users SET UserID='${1}', Password_hash='${LORIS_ADMIN_PASSWORD_HASH}', Email='${LORIS_EMAIL}', Active='Y' WHERE ID=1"
+    echo "Admin user password set."
+    # mysql -s --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
+    #     -e "UPDATE users SET UserID='${1}', Password_hash='${LORIS_ADMIN_PASSWORD_HASH}', Email='${LORIS_EMAIL}', Active='Y' WHERE ID=1" ${MYSQL_DATABASE}
 }
 
-_set_admin_site() {
-    mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} \
-        -e "UPDATE user_psc_rel SET CenterID=(SELECT ID FROM psc WHERE Name='${SITE_NAME}') WHERE ID=1" ${MYSQL_DATABASE}
+_add_admin_site() {
+    _mysql_cmd "INSERT INTO user_psc_rel (UserID, CenterID) VALUES (1, (SELECT CenterID FROM psc WHERE Name='${SITE_NAME}'))"
 }
 
 # UPDATE psc SET Name='${SITE_NAME}', Alias='${SITE_ALIAS}', MRI_alias='${MRI_ALIAS}', Study_site='${STUDY_SITE_YN}' WHERE CenterID=1;
 # Site will have CenterID=2
 _install_site_config() {
-    mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
-INSERT INTO psc (Name, Alias, MRI_alias, Study_site) VALUES ('${SITE_NAME}','${SITE_ALIAS}','${MRI_ALIAS}','${STUDY_SITE_YN}');
-EOF
+    _mysql_cmd "INSERT INTO psc (Name, Alias, MRI_alias, Study_site) VALUES ('${SITE_NAME}','${SITE_ALIAS}','${MRI_ALIAS}','${STUDY_SITE_YN}')"
 }
 
 _initialize_visits() {
     for VISIT in ${VISIT_LABELS}; do
         echo "Installing visit ${VISIT}..."
-        mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
-INSERT INTO Visit_Windows (Visit_label,  WindowMinDays, WindowMaxDays, OptimumMinDays, OptimumMaxDays, WindowMidpointDays) VALUES ('${VISIT}', ${WINDOW_MIN_DAYS}, ${WINDOW_MAX_DAYS}, ${OPTIMUM_MIN_DAYS}, ${OPTIMUM_MAX_DAYS}, ${WINDOW_MIDPOINT_DAYS});
-INSERT INTO visit (VisitName, VisitLabel) VALUES ('${VISIT}', '${VISIT}');
-EOF
+        _mysql_cmd "INSERT INTO Visit_Windows (Visit_label,  WindowMinDays, WindowMaxDays, OptimumMinDays, OptimumMaxDays, WindowMidpointDays) VALUES ('${VISIT}', ${WINDOW_MIN_DAYS}, ${WINDOW_MAX_DAYS}, ${OPTIMUM_MIN_DAYS}, ${OPTIMUM_MAX_DAYS}, ${WINDOW_MIDPOINT_DAYS})"
+        _mysql_cmd "INSERT INTO visit (VisitName, VisitLabel) VALUES ('${VISIT}', '${VISIT}');"
+
         for COHORT in ${COHORT_LABELS}; do
             echo "Installing visit-cohort relationship for ${VISIT} and ${COHORT}..."
-            mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
-INSERT INTO visit_project_cohort_rel (VisitID, ProjectCohortRelID) 
-VALUES (
-    (SELECT VisitID FROM visit WHERE VisitName='${VISIT}'),
-    (
-        SELECT ProjectCohortRelID FROM project_cohort_rel 
-            WHERE ProjectID=(SELECT ProjectID FROM Project WHERE Name='${PROJECT_NAME}') 
-            AND CohortID=(SELECT CohortID FROM cohort WHERE title='${COHORT}')
-    )
-);
-EOF
+            _mysql_cmd "INSERT INTO visit_project_cohort_rel (VisitID, ProjectCohortRelID) VALUES (
+                (SELECT VisitID FROM visit WHERE VisitName='${VISIT}'),
+                    (
+                        SELECT ProjectCohortRelID FROM project_cohort_rel 
+                            WHERE ProjectID=(SELECT ProjectID FROM Project WHERE Name='${PROJECT_NAME}') 
+                            AND CohortID=(SELECT CohortID FROM cohort WHERE title='${COHORT}')
+                    )
+                )"
         done
     done
 }
@@ -79,20 +85,17 @@ _initialize_cohorts() {
         # Install Cohorts, skipping default values.
         if [[ "${COHORT}" != "Control" && "${COHORT}" != "Experimental" ]]; then
             echo "Installing cohort ${COHORT}..."
-            mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
-INSERT INTO cohort (title, useEDC, WindowDifference) VALUES ('${COHORT}', false, 'optimal');
-EOF
+            _mysql_cmd "INSERT INTO cohort (title, useEDC, WindowDifference) VALUES ('${COHORT}', false, 'optimal')"
+            #             mysql -s --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
+            # INSERT INTO cohort (title, useEDC, WindowDifference) VALUES ('${COHORT}', false, 'optimal');
+            # EOF
         fi
 
         # Install Project-Cohort relationships.
         echo "Installing project-cohort relationship for ${COHORT}..."
-        mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
-INSERT INTO project_cohort_rel (ProjectID, CohortID) 
-VALUES ( 
-    (SELECT ProjectID FROM Project WHERE Name = '${PROJECT_NAME}'), 
-    (SELECT CohortID from cohort where title = '${COHORT}')
-);
-EOF
+        _mysql_cmd "INSERT INTO project_cohort_rel (ProjectID, CohortID) VALUES ( 
+                    (SELECT ProjectID FROM Project WHERE Name = '${PROJECT_NAME}'), 
+                    (SELECT CohortID from cohort where title = '${COHORT}'))"
     done
 }
 
@@ -122,10 +125,7 @@ _install_instruments() {
 
 _install_instrument_battery() {
     echo "Setting up Loris battery with all instruments..."
-    mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <<EOF
-INSERT INTO test_battery (Test_name, AgeMinDays, AgeMaxDays, Active, Stage, Visit_label, CenterID) 
-    SELECT Test_name, ${DEFAULT_TEST_AGE_MIN_DAYS}, ${DEFAULT_TEST_AGE_MAX_DAYS}, 'Y', '${DEFAULT_TEST_STAGE}', VisitLabel, 2 FROM test_names CROSS JOIN visit;
-EOF
+    _mysql_cmd "INSERT INTO test_battery (Test_name, AgeMinDays, AgeMaxDays, Active, Stage, CohortID, Visit_label, CenterID) SELECT Test_name, ${DEFAULT_TEST_AGE_MIN_DAYS}, ${DEFAULT_TEST_AGE_MAX_DAYS}, 'Y', '${DEFAULT_TEST_STAGE}', (SELECT CohortID FROM cohort WHERE title = '${DEFAULT_COHORT}'), VisitLabel, 2 FROM test_names CROSS JOIN visit"
 }
 
 _create_db_and_user() {
@@ -149,7 +149,7 @@ _install_db_schema() {
     echo "Setting up Loris database schema..."
     for sql_file in ${BASE_PATH}/SQL/0000*.sql; do
         echo "Installing ${sql_file}..."
-        mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} <${sql_file}
+        mysql --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --database=${MYSQL_DATABASE} <${sql_file}
     done
 }
 
@@ -276,6 +276,7 @@ if [[ "${INSTALL_DB}" == "True" ]]; then
     if [[ -n "${SITE_NAME}" ]]; then
         echo "Setting up Loris site..."
         _install_site_config
+        _add_admin_site
     else
         echo "Skipping site initialization."
     fi
