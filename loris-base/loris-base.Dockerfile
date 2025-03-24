@@ -9,7 +9,7 @@ SHELL ["/bin/bash", "-c"]
 # Update and install dependencies.
 RUN apt-get -qqq update && \
     DEBIAN_FRONTEND=noninteractive \
-    apt-get -y install \
+    apt-get -y install --no-install-recommends \
         apache2 \
         curl \
         git \
