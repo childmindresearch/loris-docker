@@ -1,0 +1,26 @@
+services:
+  couch:
+    image: couchdb:latest
+    platform: linux/amd64
+    configs:
+      - source: couch_config
+        target: /opt/couchdb/etc/local.d/docker.ini
+  web:
+    environment:
+      - COUCH_PASSWORD=${COUCH_PASSWORD}
+      - COUCH_USERNAME=${COUCH_USERNAME}
+      - COUCH_HOSTNAME=couch
+      - COUCH_PORT=5984
+      - COUCH_DATABASE=loris
+
+configs:
+  couch_config:
+    content: |
+      [couchdb]
+      single_node = true
+
+      [chttpd]
+      bind_address = 0.0.0.0
+
+      [admins]
+      ${COUCH_USERNAME}=${COUCH_PASSWORD}

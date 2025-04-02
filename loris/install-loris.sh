@@ -205,6 +205,17 @@ _install_loris_config_xml() {
         -e "s/%DATABASE%/${MYSQL_DATABASE}/g" \
         "${CONFIG_XML}"
 
+    if [[ -n ${COUCH_HOSTNAME} ]]; then
+        echo "Installing CouchDB configuration..."
+        sed -i \
+            -e "s/%COUCH_DATABASE%/${COUCH_DATABASE}/g" \
+            -e "s/%COUCH_HOSTNAME%/${COUCH_HOSTNAME}/g" \
+            -e "s/%COUCH_PORT%/${COUCH_PORT}/g" \
+            -e "s/%COUCH_USERNAME%/${COUCH_USERNAME}/g" \
+            -e "s/%COUCH_PASSWORD%/${COUCH_PASSWORD}/g" \
+            "${CONFIG_XML}"
+    fi
+
     if [[ "${MANUAL_PSCID_GENERATION}" == "True" ]]; then
         # Set PSCID generation to manual.
         echo "Setting PSCID generation to manual..."
