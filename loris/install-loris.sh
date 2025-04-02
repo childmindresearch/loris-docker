@@ -145,6 +145,14 @@ _create_db_and_user() {
         -e "GRANT ALTER, ALTER ROUTINE, CREATE, CREATE ROUTINE, CREATE TEMPORARY TABLES, CREATE VIEW, DELETE, DROP, EVENT, EXECUTE, INDEX, INSERT, LOCK TABLES, REFERENCES, SELECT, SHOW VIEW, TRIGGER, UPDATE ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%' WITH GRANT OPTION;"
 }
 
+_create_couch_db() {
+    echo "Creating CouchDB database: ${COUCH_DATABASE}..."
+    curl \
+        -H 'Content-Type: application/json' \
+        -X POST http://${COUCH_USERNAME}:${COUCH_PASSWORD}@${COUCH_HOSTNAME}:${COUCH_PORT}/_replicate \
+        -d '{"source":"http://couchdb.loris.ca:5984/dataquerytool-1_0_0", "target":"'"${COUCH_DATABASE}"'", "create_target":true}'
+}
+
 _install_db_schema() {
     echo "Setting up Loris database schema..."
     for sql_file in ${BASE_PATH}/SQL/0000*.sql; do
@@ -312,6 +320,13 @@ fi
 
 # Installation that modifies file system.
 _install_loris_config_xml
+
+if [[ "${CREATE_COUCH}" == "True" ]]; then
+    echo "Creating CouchDB database..."
+    _create_couch_db
+else
+    echo "Skipping CouchDB creation."
+fi
 
 if [[ -d /etc/loris_instruments ]]; then
     echo "Installing instruments..."

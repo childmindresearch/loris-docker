@@ -12,6 +12,7 @@ services:
       - COUCH_HOSTNAME=couch
       - COUCH_PORT=5984
       - COUCH_DATABASE=loris
+      - CREATE_COUCH=True
 
 configs:
   couch_config:
