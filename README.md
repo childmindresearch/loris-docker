@@ -2,7 +2,6 @@
 
 Docker build for Loris
 
-
 ## Containers
 
 ### Loris-Base
@@ -32,14 +31,28 @@ Image to build MINC Toolkit. Not used currently, but available for MINC reposito
 
 ## Building
 
-Repository uses [Task](https://taskfile.dev/) to build the images. 
+Repository uses [Task](https://taskfile.dev/) to build the images.
 
-After installing Task, run `task <image_name>` to build. 
+After installing Task, run `task <image_name>` to build.
 
 To tag the loris-mri image with an AWS ECR repository to enable pushing the image, set the following variables in secrets/aws-ecr.env
 
--  AWS_ECR_TAG=true
--  AWS_ECR_REGION
--  AWS_ACCOUNT_ID
--  AWS_ECR_REPO_NAME
--  AWS_ECR_IMAGE_TAG
+- AWS_ECR_TAG=true
+- AWS_ECR_REGION
+- AWS_ACCOUNT_ID
+- AWS_ECR_REPO_NAME
+- AWS_ECR_IMAGE_TAG
+
+# Using CouchDB and old DQT
+
+To configure loris-docker with a CouchDB backend, use the following environment variables. These will be substituted into the config.xml.
+
+- COUCH_DATABASE
+- COUCH_HOSTNAME
+- COUCH_PORT
+- COUCH_USERNAME
+- COUCH_PASSWORD
+
+The file `docker-compose.couch.yml` shows how the CouchDB image can be integrated into a docker compose set-up. It can be used directly using docker compose yaml merging functionality, e.g.
+
+`docker compose -f docker-compose.yml -f docker-compose.couch.yml up -d`
