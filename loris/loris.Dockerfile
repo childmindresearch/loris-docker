@@ -67,7 +67,7 @@ RUN mkdir -m 770 -p ./tools/logs \
 
 # Set up initial project directory skeleton and permissions
 RUN mkdir -m 770 -p ./project/data ./project/libraries ./project/instruments \
-                    ./project/templates ./project/tables_sql ./project/modules \
+    ./project/templates ./project/tables_sql ./project/modules \
     && chown -R lorisadmin:www-data ./project
 
 # Set up smarty cache directory
@@ -77,12 +77,12 @@ RUN mkdir -m 777 -p ./smarty/templates_c \
 
 # Configure Apache
 RUN sed -e "s#%LORISROOT%#/var/www/loris#g" \
-        -e "s#%PROJECTNAME%#${PROJECT_NAME}#g" \
-        -e "s#%LOGDIRECTORY%#/var/log/apache2#g" \
-        <./docs/config/apache2-site \
-        >/etc/apache2/sites-available/"${PROJECT_NAME}".conf \
+    -e "s#%PROJECTNAME%#${PROJECT_NAME}#g" \
+    -e "s#%LOGDIRECTORY%#/var/log/apache2#g" \
+    <./docs/config/apache2-site \
+    >/etc/apache2/sites-available/"${PROJECT_NAME}".conf \
     && ln -s /etc/apache2/sites-available/"${PROJECT_NAME}".conf \
-                  /etc/apache2/sites-enabled/"${PROJECT_NAME}".conf \
+    /etc/apache2/sites-enabled/"${PROJECT_NAME}".conf \
     && a2dissite 000-default \
     && a2ensite "${PROJECT_NAME}".conf \
     && a2enmod rewrite \
@@ -91,11 +91,13 @@ RUN sed -e "s#%LORISROOT%#/var/www/loris#g" \
 
 # Configure PHP
 RUN sed -i -e "s/^session.gc_maxlifetime =.*\$/session.gc_maxlifetime = 10800/" \
-           -e "s/^max_execution_time =.*\$/max_execution_time = 10800/" \
-           -e "s/^upload_max_filesize =.*\$/upload_max_filesize = 1024M/" \
-           -e "s/^post_max_size =.*\$/post_max_size = 10800/" \
-           -e "s!^;sendmail_path =.*\$!/usr/bin/msmtp -C /etc/msmtprc -t!" \
-        /etc/php/8.3/apache2/php.ini 
+    -e "s/^max_input_time =.*\$/max_input_time = 10800/" \
+    -e "s/^max_execution_time =.*\$/max_execution_time = 10800/" \
+    -e "s/^upload_max_filesize =.*\$/upload_max_filesize = 1024M/" \
+    -e "s/^post_max_size =.*\$/post_max_size = 1024M/" \
+    -e "s/^memory_limit =.*\$/memory_limit = 256M/" \
+    -e "s!^;sendmail_path =.*\$!/usr/bin/msmtp -C /etc/msmtprc -t!" \
+    /etc/php/8.3/apache2/php.ini 
 
 # Install dependencies
 RUN su lorisadmin -c make

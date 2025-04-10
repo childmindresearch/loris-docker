@@ -32,7 +32,9 @@ services:
       - "8080:80"
     volumes:
       - loris-projects:/var/www/loris/project
-      - ${LORIS_LOCAL_INST_DIR:-./local_instruments}:/etc/loris_instruments:ro
+      - ${LORIS_LOCAL_INST_DIR:-./local_instruments}:/run/loris_instruments:ro
+      - ${LORIS_CONFIG_SETTINGS_DIR:-./config_settings}:/run/loris_config_settings:ro
+      - ${LORIS_DB_IMPORT_DIR:-./db_import}:/run/loris_db_import:ro
     environment:
       # Admin config
       - LORIS_ADMIN_USER=${LORIS_ADMIN_USER}
@@ -81,6 +83,7 @@ services:
       # CREATE_DB required for RDS, not for compose MySQL container that creates DB and user on start
       - CREATE_DB=True
       - INSTALL_DB=True
+      - EXTRA_CONFIG_DIR=/opt/loris_config
       # DEBUG flag
       # - DEBUG_CONTAINER=True
     depends_on:

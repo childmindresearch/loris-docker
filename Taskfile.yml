@@ -1,11 +1,11 @@
 # https://taskfile.dev
 
-version: '3'
+version: "3"
 
 dotenv: [secrets/aws-ecr.env]
 vars:
   LORIS_SOURCE: release
-  LORIS_VERSION: "26.0.0"
+  LORIS_VERSION: "26.0.4"
   PLATFORM: linux/amd64
   LORIS_MRI_VERSION: "26.0.0"
   NO_CACHE: false
@@ -23,8 +23,20 @@ tasks:
         vars:
           IMAGE: loris
           IMAGE_NAME: loris
-          BUILD_ARGS: ["LORIS_SOURCE={{.LORIS_SOURCE}}", "LORIS_BASE=loris-base", "BASE_TAG=latest"]
-          TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest"]
+          BUILD_ARGS:
+            [
+              "LORIS_SOURCE={{.LORIS_SOURCE}}",
+              "LORIS_BASE=loris-base",
+              "BASE_TAG=latest",
+              "LORIS_VERSION={{.LORIS_VERSION}}",
+            ]
+          TAGS:
+            [
+              "{{.GIT_COMMIT}}",
+              "{{.TIMESTAMP}}",
+              "{{.LORIS_VERSION}}",
+              "latest",
+            ]
     deps: [loris-base]
   loris-mri:
     deps: [loris-mri-deps]
@@ -33,8 +45,19 @@ tasks:
         vars:
           IMAGE: loris-mri
           IMAGE_NAME: loris-mri
-          BUILD_ARGS: ["LORIS_SOURCE={{.LORIS_SOURCE}}", "LORIS_MRI_VERSION={{.LORIS_MRI_VERSION}}", "BASE_TAG=latest"]
-          TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest", "{{.AWS_ECR_REPO_TAG}}"]
+          BUILD_ARGS:
+            [
+              "LORIS_SOURCE={{.LORIS_SOURCE}}",
+              "LORIS_MRI_VERSION={{.LORIS_MRI_VERSION}}",
+              "BASE_TAG=latest",
+            ]
+          TAGS:
+            [
+              "{{.GIT_COMMIT}}",
+              "{{.TIMESTAMP}}",
+              "latest",
+              "{{.AWS_ECR_REPO_TAG}}",
+            ]
   loris-mri-deps:
     deps: [loris-mri-base]
     cmds:
@@ -42,7 +65,12 @@ tasks:
         vars:
           IMAGE: loris
           IMAGE_NAME: loris-mri-deps
-          BUILD_ARGS: ["LORIS_SOURCE={{.LORIS_SOURCE}}", "LORIS_BASE=loris-mri-base", "BASE_TAG=latest"]
+          BUILD_ARGS:
+            [
+              "LORIS_SOURCE={{.LORIS_SOURCE}}",
+              "LORIS_BASE=loris-mri-base",
+              "BASE_TAG=latest",
+            ]
           TAGS: ["{{.GIT_COMMIT}}", "{{.TIMESTAMP}}", "latest"]
   loris-mri-base:
     deps: [loris-base]

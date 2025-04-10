@@ -102,7 +102,7 @@ _initialize_cohorts() {
 _install_instruments() {
     cd "${BASE_PATH}/tools/"
     shopt -s nullglob
-    for instrument_file in /etc/loris_instruments/*.linst; do
+    for instrument_file in /run/loris_instruments/*.linst; do
         local instrument_filename=$(basename ${instrument_file})
         local instrument=${instrument_filename%.linst}
         if [[ -f "${BASE_PATH}/project/instruments/${instrument_filename}" ]]; then
@@ -240,7 +240,40 @@ _install_loris_config_xml() {
     chmod 660 "${CONFIG_XML}"
 }
 
-# Install Loris configuration.
+_install_config_settings() {
+    for f in /opt/loris_config_settings/*.txt; do
+        local config_name=$(basename ${f} .txt)
+        echo "Installing config setting ${config_name}..."
+        # Check if the file exists in the database.
+        local exists=$(_mysql_cmd "SELECT COUNT(*) FROM ConfigSettings WHERE Name='${config_name}'")
+        if [[ "${exists}" -eq 0 ]]; then
+            echo "Config setting ${config_name} does not exist in the database. Skipping."
+            continue
+        fi
+
+        # Push contents of file to DB.
+        local content=$(<${f})
+        _update_config ${config_name} ${content}
+    done
+}
+
+_install_db_import() {
+    for f in /run/loris_db_import/*.csv; do
+        local table_name=$(basename ${f} .csv)
+        echo "Installing DB import for table ${table_name}..."
+        # Check if the file exists in the database.
+        local exists=$(_mysql_cmd "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='${table_name}'")
+        if [[ "${exists}" -eq 0 ]]; then
+            echo "Table ${table_name} does not exist in the database. Skipping."
+            continue
+        fi
+
+        # Push contents of file to DB.
+        _mysql_cmd "LOAD DATA LOCAL INFILE '${f}' INTO TABLE ${table_name} FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
+    done
+}
+
+### Main ###
 
 # Load Secrets
 _file_env MYSQL_PASSWORD
@@ -328,7 +361,7 @@ else
     echo "Skipping CouchDB creation."
 fi
 
-if [[ -d /etc/loris_instruments ]]; then
+if [[ -d /run/loris_instruments ]]; then
     echo "Installing instruments..."
     _install_instruments
 else
@@ -347,4 +380,18 @@ if [[ -n "${LORIS_EMAIL}" && -n "${SMTP_HOST}" && -n "${SMTP_PASSWORD}" ]]; then
     _configure_mail
 else
     echo "Skipping SMTP configuration."
+fi
+
+if [[ -d /run/loris_config_settings ]]; then
+    echo "Installing Loris config settings..."
+    _install_config_settings
+else
+    echo "Loris config settings directory does not exist. Skipping config settings installation."
+fi
+
+if [[ -d /run/loris_db_import ]]; then
+    echo "Installing Loris DB import..."
+    _install_db_import
+else
+    echo "Loris DB import directory does not exist. Skipping DB import installation."
 fi
