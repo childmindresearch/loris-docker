@@ -28,6 +28,10 @@ _mysql_cmd() {
     mysql -s --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --database=${MYSQL_DATABASE} -e "${1}"
 }
 
+_mysql_cmd_quiet() {
+    mysql -s --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --database=${MYSQL_DATABASE} -e "${1}"
+}
+
 _mysql_root_cmd() {
     echo "Running MYSQL ROOT command: ${1}"
     mysql -s --host=${MYSQL_HOST} --user=root --password=${MYSQL_ROOT_PASSWORD} -e "${1}"
@@ -241,19 +245,22 @@ _install_loris_config_xml() {
 }
 
 _install_config_settings() {
-    for f in /opt/loris_config_settings/*.txt; do
-        local config_name=$(basename ${f} .txt)
-        echo "Installing config setting ${config_name}..."
+    for f in /run/loris_config_settings/*.txt; do
+        local config_label=$(basename "${f}" .txt)
+        echo "Installing config setting ${config_label}..."
         # Check if the file exists in the database.
-        local exists=$(_mysql_cmd "SELECT COUNT(*) FROM ConfigSettings WHERE Name='${config_name}'")
+        local exists=$(_mysql_cmd_quiet "SELECT COUNT(*) FROM ConfigSettings WHERE Label='${config_label}'")
+        echo "Config setting ${config_label} exists in the database: ${exists}"
         if [[ "${exists}" -eq 0 ]]; then
-            echo "Config setting ${config_name} does not exist in the database. Skipping."
+            echo "Config setting ${config_label} does not exist in the database. Skipping."
             continue
         fi
 
         # Push contents of file to DB.
-        local content=$(<${f})
-        _update_config ${config_name} ${content}
+        local content=$(<"${f}")
+        local config_name=$(_mysql_cmd_quiet "SELECT Name FROM ConfigSettings WHERE Label='${config_label}'")
+        echo "Updating config setting ${config_label} with name ${config_name} and contents ${content}..."
+        _update_config "${config_name}" "${content}"
     done
 }
 
