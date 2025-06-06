@@ -269,34 +269,34 @@ _install_config_settings() {
     done
 }
 
+_load_db_table() {
+    local filepath=$1
+    if [[ ! -f "${filepath}" ]]; then
+        echo "File ${filepath} does not exist. Skipping."
+        return
+    fi
+    local table_name=$(basename ${filepath} .csv)
+    local exists=$(_mysql_cmd_quiet "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='${table_name}'")
+    if [[ "${exists}" -eq 0 ]]; then
+        echo "Table ${table_name} does not exist in the database. Skipping."
+        return
+    fi
+    echo "Loading data into table ${table_name} from ${file_path}..."
+    _mysql_infile_cmd "LOAD DATA LOCAL INFILE '${file_path}' INTO TABLE ${table_name} FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
+}
+
 _install_db_import() {
     echo "Installing Loris DB import from /run/loris_db_import/*.csv files..."
     # Must install users first, as other tables are constrained by foreign keys.
-    if [[ -e "/run/loris_db_import/users.csv" ]]; then
-        # Check if the users.csv file exists in the database.
-        local exists=$(_mysql_cmd_quiet "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='users'")
-        if [[ "${exists}" -eq 0 ]]; then
-            echo "Table users does not exist in the database. Skipping users.csv import."
-            return
-        else
-            echo "Installing users from users.csv"
-            _mysql_infile_cmd "LOAD DATA LOCAL INFILE '/run/loris_db_import/users.csv' INTO TABLE users FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
-        fi
-    fi
+    _load_db_table "/run/loris_db_import/users.csv"
 
-    for f in $(ls /run/loris_db_import/*.csv | grep -v "users.csv"); do
-        local table_name=$(basename ${f} .csv)
-        echo "Installing DB import for table ${table_name}..."
-        # Check if the file exists in the database.
-        local exists=$(_mysql_cmd_quiet "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='${table_name}'")
-        if [[ "${exists}" -eq 0 ]]; then
-            echo "Table ${table_name} does not exist in the database. Skipping."
-            continue
-        fi
-
-        # Push contents of file to DB.
-        _mysql_infile_cmd "LOAD DATA LOCAL INFILE '${f}' INTO TABLE ${table_name} FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
+    for f in $(ls /run/loris_db_import/*.csv | grep -v "users.csv" | grep -v "user_perm_rel.csv"); do
+        _load_db_table "${f}"
     done
+
+    # Load user_perm_rel.csv last, as it depends on other tables.
+    _load_db_table "/run/loris_db_import/user_perm_rel.csv"
+    echo "Loris DB import completed."
 }
 
 ### Main ###
