@@ -54,9 +54,6 @@ ADD --chown=lorisadmin:lorisadmin https://github.com/aces/Loris.git /var/www/lor
 # Continue installation with appropriate source
 FROM loris-${LORIS_SOURCE} AS loris
 
-# Overwrite script with our copy that uses text rather than varchar to overcome row size limits.
-ADD --chown=lorisadmin:lorisadmin ./generate_tables_sql_and_testNames.php /var/www/loris/tools/
-
 # Set permissions on Loris directory and set working directory
 RUN chmod 755 /var/www/loris && chown -R lorisadmin:lorisadmin /var/www/loris
 WORKDIR /var/www/loris

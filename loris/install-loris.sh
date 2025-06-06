@@ -28,6 +28,11 @@ _mysql_cmd() {
     mysql -s --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --database=${MYSQL_DATABASE} -e "${1}"
 }
 
+_mysql_infile_cmd() {
+    echo "Running MYSQL LOAD command: ${1}"
+    mysql --local-infile=1 -s --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --database=${MYSQL_DATABASE} -e "${1}"
+}
+
 _mysql_cmd_quiet() {
     mysql -s --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --database=${MYSQL_DATABASE} -e "${1}"
 }
@@ -265,18 +270,32 @@ _install_config_settings() {
 }
 
 _install_db_import() {
-    for f in /run/loris_db_import/*.csv; do
+    echo "Installing Loris DB import from /run/loris_db_import/*.csv files..."
+    # Must install users first, as other tables are constrained by foreign keys.
+    if [[ -e "/run/loris_db_import/users.csv" ]]; then
+        # Check if the users.csv file exists in the database.
+        local exists=$(_mysql_cmd_quiet "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='users'")
+        if [[ "${exists}" -eq 0 ]]; then
+            echo "Table users does not exist in the database. Skipping users.csv import."
+            return
+        else
+            echo "Installing users from users.csv"
+            _mysql_infile_cmd "LOAD DATA LOCAL INFILE '/run/loris_db_import/users.csv' INTO TABLE users FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
+        fi
+    fi
+
+    for f in $(ls /run/loris_db_import/*.csv | grep -v "users.csv"); do
         local table_name=$(basename ${f} .csv)
         echo "Installing DB import for table ${table_name}..."
         # Check if the file exists in the database.
-        local exists=$(_mysql_cmd "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='${table_name}'")
+        local exists=$(_mysql_cmd_quiet "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='${table_name}'")
         if [[ "${exists}" -eq 0 ]]; then
             echo "Table ${table_name} does not exist in the database. Skipping."
             continue
         fi
 
         # Push contents of file to DB.
-        _mysql_cmd "LOAD DATA LOCAL INFILE '${f}' INTO TABLE ${table_name} FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
+        _mysql_infile_cmd "LOAD DATA LOCAL INFILE '${f}' INTO TABLE ${table_name} FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
     done
 }
 
