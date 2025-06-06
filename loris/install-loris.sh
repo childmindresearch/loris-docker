@@ -270,19 +270,19 @@ _install_config_settings() {
 }
 
 _load_db_table() {
-    local filepath=$1
-    if [[ ! -f "${filepath}" ]]; then
-        echo "File ${filepath} does not exist. Skipping."
+    local table_file=$1
+    if [[ ! -f "${table_file}" ]]; then
+        echo "File ${table_file} does not exist. Skipping."
         return
     fi
-    local table_name=$(basename ${filepath} .csv)
+    local table_name=$(basename ${table_file} .csv)
     local exists=$(_mysql_cmd_quiet "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='${table_name}'")
     if [[ "${exists}" -eq 0 ]]; then
         echo "Table ${table_name} does not exist in the database. Skipping."
         return
     fi
-    echo "Loading data into table ${table_name} from ${file_path}..."
-    _mysql_infile_cmd "LOAD DATA LOCAL INFILE '${file_path}' INTO TABLE ${table_name} FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
+    echo "Loading data into table ${table_name} from ${table_file}..."
+    _mysql_infile_cmd "LOAD DATA LOCAL INFILE '${table_file}' INTO TABLE ${table_name} FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
 }
 
 _install_db_import() {
