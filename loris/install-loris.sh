@@ -299,6 +299,20 @@ _install_db_import() {
     echo "Loris DB import completed."
 }
 
+_enable_ssl() {
+    # Check for certificates.
+    if [[ -f /etc/apache2/ssl/loris-cert.pem && -f /etc/apache2/ssl/loris-key.pem ]]; then
+        sed -i \
+            -e 's/:80/:443/' \
+            -e 's/#SSLEngine Off/SSLEngine On/' \
+            -e 's/#SSL/SSL/' \
+            /etc/apache2/sites-available/
+        a2enmod ssl
+    else
+        echo "Certificates not found, skipping SSL set-up."
+    fi
+}
+
 ### Main ###
 
 # Load Secrets
@@ -420,4 +434,11 @@ if [[ -d /run/loris_db_import ]]; then
     _install_db_import
 else
     echo "Loris DB import directory does not exist. Skipping DB import installation."
+fi
+
+if [[ "${ENABLE_SSL}" == "True" ]]; then
+    echo "Enabling SSL..."
+    _enable_ssl
+else
+    echo "Not using SSL"
 fi

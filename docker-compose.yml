@@ -84,6 +84,7 @@ services:
       - CREATE_DB=True
       - INSTALL_DB=True
       - EXTRA_CONFIG_DIR=/opt/loris_config
+      - ENABLE_SSL=False
       # DEBUG flag
       # - DEBUG_CONTAINER=True
     depends_on:
