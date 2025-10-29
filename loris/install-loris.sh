@@ -306,8 +306,9 @@ _enable_ssl() {
             -e 's/:80/:443/' \
             -e 's/#SSLEngine Off/SSLEngine On/' \
             -e 's/#SSL/SSL/' \
-            /etc/apache2/sites-available/
+            /etc/apache2/sites-available/loris.conf
         a2enmod ssl
+        service apache2 restart
     else
         echo "Certificates not found, skipping SSL set-up."
     fi
