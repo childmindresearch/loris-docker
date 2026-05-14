@@ -12,6 +12,7 @@ RUN apt-get -qqq update && \
     apt-get -y install --no-install-recommends \
         apache2 \
         curl \
+        gettext \
         git \
         libapache2-mod-php8.3 \
         libmysqlclient-dev \
@@ -20,12 +21,13 @@ RUN apt-get -qqq update && \
         mysql-client \
         nodejs \
         npm \
-        php8.3 \
         php-cli \
+        php8.3 \
+        php8.3-intl \
+        php8.3-gd \
+        php8.3-mbstring \
         php8.3-mysql \
         php8.3-xml \
-        php8.3-mbstring \
-        php8.3-gd \
         php8.3-zip \
         software-properties-common \
         unzip \

@@ -1,6 +1,6 @@
 services:
   db:
-    image: mysql:latest
+    image: mysql:8
     # build:
     #   context: ./loris-mysql
     #   dockerfile: loris-mysql.Dockerfile
